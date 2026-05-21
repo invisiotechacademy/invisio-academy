@@ -217,17 +217,26 @@ function App() {
           <button type="submit">Listeye Katıl</button>
         </form>
       </section>
-
       <footer className="footer">
         <div>
           <strong>INVISIO</strong>
           <p>Technology Academy</p>
         </div>
 
+        <div className="footer-right">
+          <a href="mailto:invisiotechnology@gmail.com">
+          invisiotechnology@gmail.com
+          </a>
+
+        <div className="footer-links">
+          <a href="/gizlilik.html">Gizlilik</a>
+          <a href="/kvkk.html">KVKK</a>
+        </div>
+
         <span>Mastering the Unseen</span>
+      </div>
       </footer>
-    </main>
+        </main>
   );
 }
-
-export default App;
+      export default App;
