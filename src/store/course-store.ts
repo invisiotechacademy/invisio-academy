@@ -14,6 +14,11 @@ interface CourseStore {
   addCourse: (
     course: Course
   ) => void
+
+  updateProgress: (
+    courseId: string,
+    progress: number
+  ) => void
 }
 
 export const useCourseStore =
@@ -21,6 +26,7 @@ export const useCourseStore =
     courses: [
       {
         id: "1",
+
         title: "React Masterclass",
 
         description:
@@ -34,6 +40,7 @@ export const useCourseStore =
 
       {
         id: "2",
+
         title: "TypeScript Bootcamp",
 
         description:
@@ -52,5 +59,21 @@ export const useCourseStore =
           course,
           ...state.courses,
         ],
+      })),
+
+    updateProgress: (
+      courseId,
+      progress
+    ) =>
+      set((state) => ({
+        courses: state.courses.map(
+          (course) =>
+            course.id === courseId
+              ? {
+                  ...course,
+                  progress,
+                }
+              : course
+        ),
       })),
   }))
