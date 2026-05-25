@@ -1,13 +1,24 @@
-export default function Navbar() {
-  return (
-    <header className="flex h-16 items-center justify-between border-b border-zinc-800 bg-zinc-950 px-6">
-      <h2 className="text-lg font-semibold">
-        Dashboard
-      </h2>
+import { supabase } from "../../lib/supabase"
 
-      <div className="flex items-center gap-4">
-        <div className="h-10 w-10 rounded-full bg-zinc-800" />
-      </div>
-    </header>
+export default function Navbar() {
+  async function handleLogout() {
+    await supabase.auth.signOut()
+
+    window.location.href = "/login"
+  }
+
+  return (
+    <div className="flex items-center justify-between border-b border-zinc-800 bg-black px-6 py-4">
+      <h1 className="text-xl font-bold text-white">
+        Invisio Academy
+      </h1>
+
+      <button
+        onClick={handleLogout}
+        className="rounded-xl bg-white px-4 py-2 font-medium text-black"
+      >
+        Logout
+      </button>
+    </div>
   )
 }
