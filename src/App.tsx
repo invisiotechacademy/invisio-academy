@@ -1,5 +1,4 @@
 import {
-  BrowserRouter,
   Routes,
   Route,
   Navigate,
@@ -18,56 +17,54 @@ import AuthGuard from "./components/auth/auth-guard"
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route
-          path="/login"
-          element={<LoginPage />}
-        />
+    <Routes>
+      <Route
+        path="/login"
+        element={<LoginPage />}
+      />
 
-        <Route
-          path="/register"
-          element={<RegisterPage />}
-        />
+      <Route
+        path="/register"
+        element={<RegisterPage />}
+      />
 
-        <Route
-          path="/"
-          element={
-            <AuthGuard>
-              <DashboardLayout>
-                <DashboardPage />
-              </DashboardLayout>
-            </AuthGuard>
-          }
-        />
+      <Route
+        path="/"
+        element={
+          <AuthGuard>
+            <DashboardLayout>
+              <DashboardPage />
+            </DashboardLayout>
+          </AuthGuard>
+        }
+      />
 
-        <Route
-          path="/courses"
-          element={
-            <AuthGuard>
-              <DashboardLayout>
-                <CoursesPage />
-              </DashboardLayout>
-            </AuthGuard>
-          }
-        />
+      <Route
+        path="/courses"
+        element={
+          <AuthGuard>
+            <DashboardLayout>
+              <CoursesPage />
+            </DashboardLayout>
+          </AuthGuard>
+        }
+      />
 
-        <Route
-          path="/courses/:id"
-          element={
-            <AuthGuard>
-              <DashboardLayout>
-                <CourseDetailPage />
-              </DashboardLayout>
-            </AuthGuard>
-          }
-        />
+      <Route
+        path="/courses/:id"
+        element={
+          <AuthGuard>
+            <DashboardLayout>
+              <CourseDetailPage />
+            </DashboardLayout>
+          </AuthGuard>
+        }
+      />
 
-        <Route
-          path="*"
-          element={<Navigate to="/" />}
-        />
-      </Routes>
-    </BrowserRouter>
+      <Route
+        path="*"
+        element={<Navigate to="/" />}
+      />
+    </Routes>
   )
 }
