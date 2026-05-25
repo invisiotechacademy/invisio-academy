@@ -1,39 +1,37 @@
-import { Course } from "../types/course"
-
-export const courses: Course[] = [
+export const courses = [
   {
-    id: 1,
-    title: "Embedded Systems Engineering",
-    category: "Electronics",
-    instructor: "INVISIO",
-    price: 199,
-    students: 124,
-    published: true,
-    thumbnail:
-      "https://images.unsplash.com/photo-1518770660439-4636190af475",
+    id: "1",
+    title: "React Masterclass",
+    description:
+      "Modern React development from zero to advanced.",
+
+    image:
+      "https://images.unsplash.com/photo-1633356122544-f134324a6cee",
+
+    progress: 45,
   },
 
   {
-    id: 2,
-    title: "Drone Flight Systems",
-    category: "Aviation",
-    instructor: "INVISIO",
-    price: 249,
-    students: 89,
-    published: true,
-    thumbnail:
-      "https://images.unsplash.com/photo-1473968512647-3e447244af8f",
+    id: "2",
+    title: "TypeScript Bootcamp",
+    description:
+      "Learn professional TypeScript development.",
+
+    image:
+      "https://images.unsplash.com/photo-1515879218367-8466d910aaa4",
+
+    progress: 20,
   },
 
   {
-    id: 3,
-    title: "PCB Design Masterclass",
-    category: "Hardware",
-    instructor: "INVISIO",
-    price: 149,
-    students: 212,
-    published: false,
-    thumbnail:
-      "https://images.unsplash.com/photo-1516321318423-f06f85e504b3",
+    id: "3",
+    title: "Next.js Fullstack",
+    description:
+      "Build scalable production apps with Next.js.",
+
+    image:
+      "https://images.unsplash.com/photo-1555066931-4365d14bab8c",
+
+    progress: 70,
   },
 ]
