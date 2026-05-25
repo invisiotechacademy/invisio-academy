@@ -1,17 +1,66 @@
+import { useParams } from "react-router-dom"
+
 import { lessons } from "../data/lessons"
 
+import { useCourseStore } from "../store/course-store"
+
 export default function CourseDetailPage() {
+  const { id } = useParams()
+
+  const { courses } = useCourseStore()
+
+  const course = courses.find(
+    (course) => course.id === id
+  )
+
+  if (!course) {
+    return (
+      <div className="text-white">
+        Course not found
+      </div>
+    )
+  }
+
   return (
     <div className="text-white">
-      <div className="mb-10">
-        <h1 className="text-5xl font-bold">
-          React Masterclass
-        </h1>
+      <div className="mb-10 overflow-hidden rounded-3xl border border-white/10 bg-zinc-900">
+        <div className="aspect-video overflow-hidden">
+          <img
+            src={course.image}
+            className="h-full w-full object-cover"
+          />
+        </div>
 
-        <p className="mt-4 max-w-2xl text-lg text-zinc-500">
-          Learn React from zero to advanced
-          level with real-world projects.
-        </p>
+        <div className="p-8">
+          <h1 className="text-5xl font-bold">
+            {course.title}
+          </h1>
+
+          <p className="mt-4 max-w-3xl text-lg text-zinc-500">
+            {course.description}
+          </p>
+
+          <div className="mt-8">
+            <div className="mb-2 flex justify-between">
+              <span className="text-zinc-500">
+                Course Progress
+              </span>
+
+              <span>
+                {course.progress}%
+              </span>
+            </div>
+
+            <div className="h-4 overflow-hidden rounded-full bg-black">
+              <div
+                className="h-full rounded-full bg-white"
+                style={{
+                  width: `${course.progress}%`,
+                }}
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-6">
