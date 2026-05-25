@@ -2,31 +2,50 @@ import { lessons } from "../data/lessons"
 
 export default function CourseDetailPage() {
   return (
-    <div className="p-8 text-white">
-      <h1 className="text-3xl font-bold mb-8">
-        React Masterclass
-      </h1>
+    <div className="text-white">
+      <div className="mb-10">
+        <h1 className="text-5xl font-bold">
+          React Masterclass
+        </h1>
 
-      <div className="grid gap-4">
-        {lessons.map((lesson) => (
+        <p className="mt-4 max-w-2xl text-lg text-zinc-500">
+          Learn React from zero to advanced
+          level with real-world projects.
+        </p>
+      </div>
+
+      <div className="grid gap-6">
+        {lessons.map((lesson, index) => (
           <div
             key={lesson.id}
-            className="bg-zinc-900 p-5 rounded-xl border border-zinc-800"
+            className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-900"
           >
-            <h2 className="text-xl font-semibold">
-              {lesson.title}
-            </h2>
-
-            <p className="text-zinc-400 mt-1">
-              {lesson.duration}
-            </p>
-
-            <div className="mt-4 aspect-video rounded-lg overflow-hidden">
+            <div className="aspect-video">
               <iframe
                 src={lesson.video_url}
-                className="w-full h-full"
+                className="h-full w-full"
                 allowFullScreen
               />
+            </div>
+
+            <div className="p-8">
+              <div className="mb-3 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white font-bold text-black">
+                  {index + 1}
+                </div>
+
+                <h2 className="text-2xl font-bold">
+                  {lesson.title}
+                </h2>
+              </div>
+
+              <p className="text-zinc-500">
+                Duration: {lesson.duration}
+              </p>
+
+              <button className="mt-6 rounded-2xl bg-white px-6 py-3 font-semibold text-black">
+                Mark as Complete
+              </button>
             </div>
           </div>
         ))}
