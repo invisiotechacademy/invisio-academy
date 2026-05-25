@@ -5,7 +5,12 @@ import {
   LogOut,
 } from "lucide-react"
 
-import { Link, useLocation } from "react-router-dom"
+import {
+  Link,
+  useLocation,
+} from "react-router-dom"
+
+import { supabase } from "../../lib/supabase"
 
 const links = [
   {
@@ -29,6 +34,12 @@ const links = [
 
 export default function Sidebar() {
   const location = useLocation()
+
+  async function handleLogout() {
+    await supabase.auth.signOut()
+
+    window.location.href = "/login"
+  }
 
   return (
     <div className="hidden w-[280px] border-r border-white/10 bg-black lg:flex lg:flex-col">
@@ -70,7 +81,10 @@ export default function Sidebar() {
       </div>
 
       <div className="border-t border-white/10 p-4">
-        <button className="flex w-full items-center gap-4 rounded-2xl px-5 py-4 text-zinc-400 transition hover:bg-zinc-900 hover:text-white">
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center gap-4 rounded-2xl px-5 py-4 text-zinc-400 transition hover:bg-zinc-900 hover:text-white"
+        >
           <LogOut size={22} />
 
           Logout
