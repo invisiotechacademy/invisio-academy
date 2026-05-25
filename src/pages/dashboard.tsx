@@ -1,94 +1,112 @@
-import { useEffect, useState } from "react"
-
-import { Link } from "react-router-dom"
-
-import { supabase } from "@/lib/supabase"
+import { courses } from "../data/courses"
 
 export default function DashboardPage() {
-  const [courses, setCourses] =
-    useState<any[]>([])
-
-  const [loading, setLoading] =
-    useState(true)
-
-  useEffect(() => {
-    fetchCourses()
-  }, [])
-
-  async function fetchCourses() {
-    const response =
-      await supabase
-        .from("courses")
-        .select("*")
-
-    if (response.data) {
-      setCourses(response.data)
-    }
-
-    setLoading(false)
-  }
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-black text-white">
-        <div className="text-center">
-          <div className="mx-auto h-16 w-16 animate-spin rounded-full border-4 border-zinc-700 border-t-white" />
-
-          <p className="mt-6 text-zinc-400">
-            Loading dashboard...
-          </p>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-black p-8 text-white">
-      <div className="mb-10">
-        <h1 className="text-4xl font-bold">
-          Dashboard
+    <div className="text-white">
+      <div className="mb-12">
+        <h1 className="text-5xl font-bold">
+          Welcome Back 👋
         </h1>
 
-        <p className="mt-3 text-zinc-400">
-          Welcome back 🚀
+        <p className="mt-4 text-lg text-zinc-500">
+          Continue your learning journey
         </p>
       </div>
 
-      {courses.length === 0 ? (
-        <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-12 text-center">
+      <div className="mb-12 grid gap-6 md:grid-cols-3">
+        <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-8">
+          <p className="text-zinc-500">
+            Total Courses
+          </p>
+
+          <h2 className="mt-4 text-5xl font-bold">
+            12
+          </h2>
+        </div>
+
+        <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-8">
+          <p className="text-zinc-500">
+            Completed
+          </p>
+
+          <h2 className="mt-4 text-5xl font-bold">
+            4
+          </h2>
+        </div>
+
+        <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-8">
+          <p className="text-zinc-500">
+            Hours Watched
+          </p>
+
+          <h2 className="mt-4 text-5xl font-bold">
+            38h
+          </h2>
+        </div>
+      </div>
+
+      <div>
+        <div className="mb-8 flex items-center justify-between">
           <h2 className="text-3xl font-bold">
-            No Courses Yet
+            Continue Watching
           </h2>
 
-          <p className="mt-4 text-zinc-500">
-            Create your first course 🚀
-          </p>
+          <button className="text-zinc-400">
+            View All
+          </button>
         </div>
-      ) : (
+
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {courses.map((course) => (
-            <Link
+            <div
               key={course.id}
-              to={`/courses/${course.id}`}
-              className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 transition hover:border-zinc-600"
+              className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900"
             >
-              <h2 className="text-2xl font-bold">
-                {course.title}
-              </h2>
-
-              <p className="mt-4 text-zinc-400">
-                {course.description}
-              </p>
-
-              <div className="mt-8">
-                <span className="rounded-2xl bg-white px-4 py-2 font-semibold text-black">
-                  Open Course
-                </span>
+              <div className="aspect-video overflow-hidden">
+                <img
+                  src={course.image}
+                  className="h-full w-full object-cover"
+                />
               </div>
-            </Link>
+
+              <div className="p-6">
+                <h3 className="text-2xl font-bold">
+                  {course.title}
+                </h3>
+
+                <p className="mt-3 text-zinc-500">
+                  {course.description}
+                </p>
+
+                <div className="mt-6">
+                  <div className="mb-2 flex justify-between text-sm">
+                    <span className="text-zinc-500">
+                      Progress
+                    </span>
+
+                    <span>
+                      {course.progress}%
+                    </span>
+                  </div>
+
+                  <div className="h-3 overflow-hidden rounded-full bg-zinc-800">
+                    <div
+                      className="h-full rounded-full bg-white"
+                      style={{
+                        width: `${course.progress}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <button className="mt-6 w-full rounded-2xl bg-white py-4 font-semibold text-black">
+                  Continue Learning
+                </button>
+              </div>
+            </div>
           ))}
         </div>
-      )}
+      </div>
     </div>
   )
 }
