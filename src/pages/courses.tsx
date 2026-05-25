@@ -1,23 +1,101 @@
+import { useState } from "react"
+
 import { Link } from "react-router-dom"
-import { courses } from "../data/courses"
+
+import { useCourseStore } from "../store/course-store"
 
 export default function CoursesPage() {
+  const { courses, addCourse } =
+    useCourseStore()
+
+  const [title, setTitle] =
+    useState("")
+
+  const [description, setDescription] =
+    useState("")
+
+  const [image, setImage] =
+    useState("")
+
+  function handleCreateCourse() {
+    if (
+      !title ||
+      !description ||
+      !image
+    )
+      return
+
+    addCourse({
+      id: crypto.randomUUID(),
+
+      title,
+
+      description,
+
+      image,
+
+      progress: 0,
+    })
+
+    setTitle("")
+    setDescription("")
+    setImage("")
+  }
+
   return (
     <div className="text-white">
-      <div className="mb-10 flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl font-bold">
-            Courses
-          </h1>
+      <div className="mb-12">
+        <h1 className="text-5xl font-bold">
+          Courses
+        </h1>
 
-          <p className="mt-2 text-zinc-500">
-            Continue improving your skills
-          </p>
+        <p className="mt-4 text-zinc-500">
+          Manage your academy courses
+        </p>
+      </div>
+
+      <div className="mb-12 rounded-3xl border border-white/10 bg-zinc-900 p-8">
+        <h2 className="mb-6 text-3xl font-bold">
+          Create Course
+        </h2>
+
+        <div className="grid gap-4">
+          <input
+            placeholder="Course title"
+            value={title}
+            onChange={(e) =>
+              setTitle(e.target.value)
+            }
+            className="rounded-2xl border border-white/10 bg-black px-5 py-4 outline-none"
+          />
+
+          <textarea
+            placeholder="Course description"
+            value={description}
+            onChange={(e) =>
+              setDescription(
+                e.target.value
+              )
+            }
+            className="min-h-[120px] rounded-2xl border border-white/10 bg-black px-5 py-4 outline-none"
+          />
+
+          <input
+            placeholder="Thumbnail URL"
+            value={image}
+            onChange={(e) =>
+              setImage(e.target.value)
+            }
+            className="rounded-2xl border border-white/10 bg-black px-5 py-4 outline-none"
+          />
+
+          <button
+            onClick={handleCreateCourse}
+            className="rounded-2xl bg-white py-4 font-bold text-black"
+          >
+            Create Course
+          </button>
         </div>
-
-        <button className="rounded-2xl bg-white px-6 py-3 font-semibold text-black">
-          Browse Courses
-        </button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -25,12 +103,12 @@ export default function CoursesPage() {
           <Link
             to={`/courses/${course.id}`}
             key={course.id}
-            className="group overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900 transition hover:border-zinc-600"
+            className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-900 transition hover:scale-[1.02]"
           >
             <div className="aspect-video overflow-hidden">
               <img
                 src={course.image}
-                className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                className="h-full w-full object-cover"
               />
             </div>
 
@@ -39,7 +117,7 @@ export default function CoursesPage() {
                 {course.title}
               </h2>
 
-              <p className="mt-3 text-zinc-400">
+              <p className="mt-3 text-zinc-500">
                 {course.description}
               </p>
 

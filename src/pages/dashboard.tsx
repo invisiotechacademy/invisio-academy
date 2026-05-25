@@ -1,6 +1,7 @@
-import { courses } from "../data/courses"
+import { useCourseStore } from "../store/course-store"
 
 export default function DashboardPage() {
+const { courses } = useCourseStore()  
   return (
     <div className="text-white">
       <div className="mb-12">
