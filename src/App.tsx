@@ -9,6 +9,7 @@ import DashboardLayout from "./components/layout/dashboard-layout"
 import DashboardPage from "./pages/dashboard"
 import CoursesPage from "./pages/courses"
 import CourseDetailPage from "./pages/course-detail"
+import SettingsPage from "./pages/settings"
 
 import LoginPage from "./pages/login"
 import RegisterPage from "./pages/register"
@@ -56,6 +57,17 @@ export default function App() {
           <AuthGuard>
             <DashboardLayout>
               <CourseDetailPage />
+            </DashboardLayout>
+          </AuthGuard>
+        }
+      />
+
+      <Route
+        path="/settings"
+        element={
+          <AuthGuard>
+            <DashboardLayout>
+              <SettingsPage />
             </DashboardLayout>
           </AuthGuard>
         }

@@ -13,7 +13,7 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <div className="mb-12 grid gap-6 md:grid-cols-3">
+      <div className="mb-12 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-8">
           <p className="text-zinc-500">
             Total Courses
@@ -41,6 +41,16 @@ export default function DashboardPage() {
 
           <h2 className="mt-4 text-5xl font-bold">
             38h
+          </h2>
+        </div>
+
+        <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-8">
+          <p className="text-zinc-500">
+            Certificates
+          </p>
+
+          <h2 className="mt-4 text-5xl font-bold">
+            7
           </h2>
         </div>
       </div>
