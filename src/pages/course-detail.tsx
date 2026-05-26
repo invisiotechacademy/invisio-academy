@@ -1,171 +1,307 @@
-import { useState } from "react"
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { supabase } from "../lib/supabase";
 
-import { useParams } from "react-router-dom"
+type Lesson = {
+  id: string;
+  title: string;
+  video_url: string;
+  content: string;
+};
 
-import { useCourseStore } from "../store/course-store"
-
-import { useLessonStore } from "../store/lesson-store"
+type Course = {
+  id: string;
+  title: string;
+  description: string;
+  thumbnail_url: string;
+};
 
 export default function CourseDetailPage() {
-  const { id } = useParams()
+  const { id } = useParams();
 
-  const { courses } = useCourseStore()
+  const [course, setCourse] =
+    useState<Course | null>(null);
 
-  const { lessons, addLesson } =
-    useLessonStore()
+  const [lessons, setLessons] =
+    useState<Lesson[]>([]);
 
-  const course = courses.find(
-    (course) => course.id === id
-  )
+  const [selectedLesson, setSelectedLesson] =
+    useState<Lesson | null>(null);
 
-  const courseLessons = lessons.filter(
-    (lesson) => lesson.courseId === id
-  )
+  const [
+    completedLessons,
+    setCompletedLessons,
+  ] = useState<string[]>([]);
 
   const [title, setTitle] =
-    useState("")
-
-  const [duration, setDuration] =
-    useState("")
+    useState("");
 
   const [videoUrl, setVideoUrl] =
-    useState("")
+    useState("");
+
+  const [content, setContent] =
+    useState("");
+
+  async function fetchCourse() {
+    const { data } =
+      await supabase
+        .from("courses")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+    if (data) {
+      setCourse(data);
+    }
+  }
+
+  async function fetchLessons() {
+    const { data } =
+      await supabase
+        .from("lessons")
+        .select("*")
+        .eq("course_id", id)
+        .order("created_at", {
+          ascending: true,
+        });
+
+    if (data) {
+      setLessons(data);
+
+      if (data.length > 0) {
+        setSelectedLesson(data[0]);
+      }
+    }
+  }
+
+  useEffect(() => {
+    fetchCourse();
+    fetchLessons();
+  }, []);
+
+  function convertYoutubeUrl(
+    url: string
+  ) {
+    if (
+      url.includes("watch?v=")
+    ) {
+      return url.replace(
+        "watch?v=",
+        "embed/"
+      );
+    }
+
+    return url;
+  }
+
+  async function createLesson() {
+    if (!title) return;
+
+    await supabase
+      .from("lessons")
+      .insert([
+        {
+          course_id: id,
+          title,
+          video_url:
+            convertYoutubeUrl(
+              videoUrl
+            ),
+          content,
+        },
+      ]);
+
+    setTitle("");
+    setVideoUrl("");
+    setContent("");
+
+    fetchLessons();
+  }
+
+  function handleCompleteLesson() {
+    if (!selectedLesson)
+      return;
+
+    if (
+      completedLessons.includes(
+        selectedLesson.id
+      )
+    )
+      return;
+
+    setCompletedLessons([
+      ...completedLessons,
+      selectedLesson.id,
+    ]);
+  }
 
   if (!course) {
     return (
-      <div className="text-white">
-        Course not found
+      <div className="p-10 text-white">
+        Loading...
       </div>
-    )
-  }
-
-  function handleAddLesson() {
-    if (
-      !title ||
-      !duration ||
-      !videoUrl
-    )
-      return
-
-    addLesson({
-      id: crypto.randomUUID(),
-
-      courseId: id!,
-
-      title,
-
-      duration,
-
-      video_url: videoUrl,
-    })
-
-    setTitle("")
-    setDuration("")
-    setVideoUrl("")
+    );
   }
 
   return (
-    <div className="text-white">
-      <div className="mb-10 overflow-hidden rounded-3xl border border-white/10 bg-zinc-900">
-        <div className="aspect-video overflow-hidden">
-          <img
-            src={course.image}
-            className="h-full w-full object-cover"
-          />
-        </div>
+    <div className="min-h-screen bg-black text-white">
+      <div className="flex">
+        {/* SIDEBAR */}
 
-        <div className="p-8">
-          <h1 className="text-5xl font-bold">
+        <div className="w-[320px] border-r border-white/10 bg-zinc-950 p-6">
+          <h1 className="mb-2 text-3xl font-bold">
             {course.title}
           </h1>
 
-          <p className="mt-4 max-w-3xl text-lg text-zinc-500">
+          <p className="mb-8 text-zinc-400">
             {course.description}
           </p>
+
+          {/* LESSON LIST */}
+
+          <div className="space-y-3">
+            {lessons.map(
+              (lesson) => (
+                <button
+                  key={lesson.id}
+                  onClick={() =>
+                    setSelectedLesson(
+                      lesson
+                    )
+                  }
+                  className={`w-full rounded-2xl border px-5 py-4 text-left transition ${
+                    selectedLesson?.id ===
+                    lesson.id
+                      ? "border-white bg-white text-black"
+                      : "border-white/10 bg-zinc-900 text-white hover:bg-zinc-800"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>
+                      {
+                        lesson.title
+                      }
+                    </span>
+
+                    {completedLessons.includes(
+                      lesson.id
+                    ) && (
+                      <span>
+                        ✅
+                      </span>
+                    )}
+                  </div>
+                </button>
+              )
+            )}
+          </div>
+
+          {/* CREATE LESSON */}
+
+          <div className="mt-10 rounded-3xl border border-white/10 bg-zinc-900 p-5">
+            <h2 className="mb-5 text-2xl font-bold">
+              Add Lesson
+            </h2>
+
+            <div className="space-y-4">
+              <input
+                placeholder="Lesson title"
+                value={title}
+                onChange={(e) =>
+                  setTitle(
+                    e.target.value
+                  )
+                }
+                className="w-full rounded-2xl border border-white/10 bg-black px-4 py-3 outline-none"
+              />
+
+              <input
+                placeholder="Youtube URL"
+                value={videoUrl}
+                onChange={(e) =>
+                  setVideoUrl(
+                    e.target.value
+                  )
+                }
+                className="w-full rounded-2xl border border-white/10 bg-black px-4 py-3 outline-none"
+              />
+
+              <textarea
+                placeholder="Lesson content"
+                value={content}
+                onChange={(e) =>
+                  setContent(
+                    e.target.value
+                  )
+                }
+                className="h-32 w-full rounded-2xl border border-white/10 bg-black px-4 py-3 outline-none"
+              />
+
+              <button
+                onClick={
+                  createLesson
+                }
+                className="w-full rounded-2xl bg-white py-4 font-bold text-black transition hover:opacity-80"
+              >
+                Create Lesson
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div className="mb-10 rounded-3xl border border-white/10 bg-zinc-900 p-8">
-        <h2 className="mb-6 text-3xl font-bold">
-          Add Lesson
-        </h2>
+        {/* PLAYER */}
 
-        <div className="grid gap-4">
-          <input
-            placeholder="Lesson title"
-            value={title}
-            onChange={(e) =>
-              setTitle(e.target.value)
-            }
-            className="rounded-2xl border border-white/10 bg-black px-5 py-4 outline-none"
-          />
-
-          <input
-            placeholder="Duration"
-            value={duration}
-            onChange={(e) =>
-              setDuration(e.target.value)
-            }
-            className="rounded-2xl border border-white/10 bg-black px-5 py-4 outline-none"
-          />
-
-          <input
-            placeholder="Youtube Embed URL"
-            value={videoUrl}
-            onChange={(e) =>
-              setVideoUrl(e.target.value)
-            }
-            className="rounded-2xl border border-white/10 bg-black px-5 py-4 outline-none"
-          />
-
-          <button
-            onClick={handleAddLesson}
-            className="rounded-2xl bg-white py-4 font-bold text-black"
-          >
-            Add Lesson
-          </button>
-        </div>
-      </div>
-
-      <div className="grid gap-6">
-        {courseLessons.map(
-          (lesson, index) => (
-            <div
-              key={lesson.id}
-              className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-900"
-            >
-              <div className="aspect-video">
+        <div className="flex-1 p-10">
+          {selectedLesson ? (
+            <>
+              <div className="mb-8 overflow-hidden rounded-3xl border border-white/10">
                 <iframe
-                  src={lesson.video_url}
-                  className="h-full w-full"
+                  src={
+                    selectedLesson.video_url
+                  }
+                  className="aspect-video w-full"
                   allowFullScreen
                 />
               </div>
 
-              <div className="p-8">
-                <div className="mb-3 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white font-bold text-black">
-                    {index + 1}
-                  </div>
+              <h1 className="mb-5 text-5xl font-bold">
+                {
+                  selectedLesson.title
+                }
+              </h1>
 
-                  <h2 className="text-2xl font-bold">
-                    {lesson.title}
-                  </h2>
-                </div>
-
-                <p className="text-zinc-500">
-                  Duration:{" "}
-                  {lesson.duration}
-                </p>
-
-                <button className="mt-6 rounded-2xl bg-white px-6 py-3 font-semibold text-black">
-                  Mark as Complete
-                </button>
+              <div className="rounded-3xl border border-white/10 bg-zinc-900 p-8 text-zinc-300">
+                {
+                  selectedLesson.content
+                }
               </div>
+
+              <button
+                onClick={
+                  handleCompleteLesson
+                }
+                className={`mt-8 rounded-2xl px-8 py-4 font-bold transition ${
+                  completedLessons.includes(
+                    selectedLesson.id
+                  )
+                    ? "bg-green-500 text-white"
+                    : "bg-white text-black"
+                }`}
+              >
+                {completedLessons.includes(
+                  selectedLesson.id
+                )
+                  ? "Completed"
+                  : "Mark as Complete"}
+              </button>
+            </>
+          ) : (
+            <div className="text-zinc-400">
+              No lessons yet
             </div>
-          )
-        )}
+          )}
+        </div>
       </div>
     </div>
-  )
+  );
 }
