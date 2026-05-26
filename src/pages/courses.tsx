@@ -1,12 +1,27 @@
-import { useState } from "react"
+import {
+  useEffect,
+  useState,
+} from "react"
 
 import { Link } from "react-router-dom"
 
-import { useCourseStore } from "../store/course-store"
+import { supabase } from "../lib/supabase"
+
+interface Course {
+  id: number
+
+  title: string
+
+  description: string
+
+  image: string
+
+  progress: number
+}
 
 export default function CoursesPage() {
-  const { courses, addCourse } =
-    useCourseStore()
+  const [courses, setCourses] =
+    useState<Course[]>([])
 
   const [title, setTitle] =
     useState("")
@@ -17,7 +32,28 @@ export default function CoursesPage() {
   const [image, setImage] =
     useState("")
 
-  function handleCreateCourse() {
+  async function getCourses() {
+    const { data } =
+      await supabase
+        .from("courses")
+        .select("*")
+        .order(
+          "created_at",
+          {
+            ascending: false,
+          }
+        )
+
+    if (data) {
+      setCourses(data)
+    }
+  }
+
+  useEffect(() => {
+    getCourses()
+  }, [])
+
+  async function handleCreateCourse() {
     if (
       !title ||
       !description ||
@@ -25,21 +61,23 @@ export default function CoursesPage() {
     )
       return
 
-    addCourse({
-      id: crypto.randomUUID(),
+    await supabase
+      .from("courses")
+      .insert({
+        title,
 
-      title,
+        description,
 
-      description,
+        image,
 
-      image,
-
-      progress: 0,
-    })
+        progress: 0,
+      })
 
     setTitle("")
     setDescription("")
     setImage("")
+
+    getCourses()
   }
 
   return (
@@ -90,7 +128,9 @@ export default function CoursesPage() {
           />
 
           <button
-            onClick={handleCreateCourse}
+            onClick={
+              handleCreateCourse
+            }
             className="rounded-2xl bg-white py-4 font-bold text-black transition hover:scale-[1.02]"
           >
             Create Course
