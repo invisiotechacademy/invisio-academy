@@ -12,84 +12,96 @@ import {
 
 import { supabase } from "../../lib/supabase"
 
-const links = [
-  {
-    name: "Dashboard",
-    path: "/",
-    icon: LayoutDashboard,
-  },
-
-  {
-    name: "Courses",
-    path: "/courses",
-    icon: BookOpen,
-  },
-
-  {
-    name: "Settings",
-    path: "/settings",
-    icon: Settings,
-  },
-]
-
 export default function Sidebar() {
   const location = useLocation()
 
   async function handleLogout() {
     await supabase.auth.signOut()
 
-    window.location.href = "/login"
+    window.location.href =
+      "/login"
   }
 
+  const links = [
+    {
+      title: "Dashboard",
+
+      icon: LayoutDashboard,
+
+      href: "/",
+    },
+
+    {
+      title: "Courses",
+
+      icon: BookOpen,
+
+      href: "/courses",
+    },
+
+    {
+      title: "Settings",
+
+      icon: Settings,
+
+      href: "/settings",
+    },
+  ]
+
   return (
-    <div className="hidden w-[280px] border-r border-white/10 bg-black lg:flex lg:flex-col">
-      <div className="border-b border-white/10 p-8">
-        <h1 className="text-3xl font-black tracking-tight text-white">
-          INVISIO
-        </h1>
+    <div className="hidden min-h-screen w-[280px] border-r border-white/10 bg-zinc-950 p-6 lg:block">
+      <div className="mb-12">
+        <div className="flex items-center gap-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-white text-2xl font-black text-black">
+            I
+          </div>
 
-        <p className="mt-2 text-sm text-zinc-500">
-          Academy Platform
-        </p>
-      </div>
+          <div>
+            <h1 className="text-2xl font-black text-white">
+              INVISIO
+            </h1>
 
-      <div className="flex-1 p-4">
-        <div className="space-y-2">
-          {links.map((link) => {
-            const Icon = link.icon
-
-            const active =
-              location.pathname === link.path
-
-            return (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`flex items-center gap-4 rounded-2xl px-5 py-4 text-lg font-medium transition ${
-                  active
-                    ? "bg-white text-black"
-                    : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
-                }`}
-              >
-                <Icon size={22} />
-
-                {link.name}
-              </Link>
-            )
-          })}
+            <p className="text-sm text-zinc-500">
+              Academy Platform
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="border-t border-white/10 p-4">
-        <button
-          onClick={handleLogout}
-          className="flex w-full items-center gap-4 rounded-2xl px-5 py-4 text-zinc-400 transition hover:bg-zinc-900 hover:text-white"
-        >
-          <LogOut size={22} />
+      <div className="space-y-3">
+        {links.map((link) => {
+          const Icon = link.icon
 
-          Logout
-        </button>
+          const isActive =
+            location.pathname ===
+            link.href
+
+          return (
+            <Link
+              key={link.href}
+              to={link.href}
+              className={`flex items-center gap-4 rounded-2xl px-5 py-4 text-lg font-semibold transition ${
+                isActive
+                  ? "bg-white text-black"
+                  : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+              }`}
+            >
+              <Icon size={22} />
+
+              {link.title}
+            </Link>
+          )
+        })}
       </div>
+
+      <button
+        onClick={handleLogout}
+        className="mt-12 flex w-full items-center gap-4 rounded-2xl border border-white/10 px-5 py-4 text-lg font-semibold text-red-400 transition hover:bg-red-500 hover:text-white"
+      >
+        <LogOut size={22} />
+
+        Logout
+      </button>
     </div>
   )
 }
