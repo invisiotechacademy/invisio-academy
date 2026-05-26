@@ -170,8 +170,9 @@ export default function CourseDetailPage() {
               key={lesson.id}
               className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-900"
             >
-              <div className="aspect-video">
+              <div className="aspect-video pointer-events-none">
                 <iframe
+                  title={lesson.title}
                   src={lesson.video_url}
                   className="h-full w-full"
                   allowFullScreen

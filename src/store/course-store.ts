@@ -1,5 +1,9 @@
 import { create } from "zustand"
 
+import {
+  persist,
+} from "zustand/middleware"
+
 interface Course {
   id: string
   title: string
@@ -22,58 +26,73 @@ interface CourseStore {
 }
 
 export const useCourseStore =
-  create<CourseStore>((set) => ({
-    courses: [
-      {
-        id: "1",
-
-        title: "React Masterclass",
-
-        description:
-          "Modern React development from zero to advanced.",
-
-        image:
-          "https://images.unsplash.com/photo-1633356122544-f134324a6cee",
-
-        progress: 45,
-      },
-
-      {
-        id: "2",
-
-        title: "TypeScript Bootcamp",
-
-        description:
-          "Learn professional TypeScript development.",
-
-        image:
-          "https://images.unsplash.com/photo-1515879218367-8466d910aaa4",
-
-        progress: 20,
-      },
-    ],
-
-    addCourse: (course) =>
-      set((state) => ({
+  create<CourseStore>()(
+    persist(
+      (set) => ({
         courses: [
-          course,
-          ...state.courses,
-        ],
-      })),
+          {
+            id: "1",
 
-    updateProgress: (
-      courseId,
-      progress
-    ) =>
-      set((state) => ({
-        courses: state.courses.map(
-          (course) =>
-            course.id === courseId
-              ? {
-                  ...course,
-                  progress,
-                }
-              : course
-        ),
-      })),
-  }))
+            title:
+              "React Masterclass",
+
+            description:
+              "Modern React development from zero to advanced.",
+
+            image:
+              "https://images.unsplash.com/photo-1633356122544-f134324a6cee",
+
+            progress: 45,
+          },
+
+          {
+            id: "2",
+
+            title:
+              "TypeScript Bootcamp",
+
+            description:
+              "Learn professional TypeScript development.",
+
+            image:
+              "https://images.unsplash.com/photo-1515879218367-8466d910aaa4",
+
+            progress: 20,
+          },
+        ],
+
+        addCourse: (
+          course
+        ) =>
+          set((state) => ({
+            courses: [
+              course,
+              ...state.courses,
+            ],
+          })),
+
+        updateProgress: (
+          courseId,
+          progress
+        ) =>
+          set((state) => ({
+            courses:
+              state.courses.map(
+                (course) =>
+                  course.id ===
+                  courseId
+                    ? {
+                        ...course,
+                        progress,
+                      }
+                    : course
+              ),
+          })),
+      }),
+
+      {
+        name:
+          "invisio-course-storage",
+      }
+    )
+  )
