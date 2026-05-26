@@ -9,10 +9,7 @@ import { useLessonStore } from "../store/lesson-store"
 export default function CourseDetailPage() {
   const { id } = useParams()
 
-  const {
-    courses,
-    updateProgress,
-  } = useCourseStore()
+  const { courses } = useCourseStore()
 
   const { lessons, addLesson } =
     useLessonStore()
@@ -67,18 +64,6 @@ export default function CourseDetailPage() {
     setVideoUrl("")
   }
 
-  function handleCompleteLesson() {
-    const nextProgress =
-      course.progress + 10
-
-    updateProgress(
-      course.id,
-      nextProgress > 100
-        ? 100
-        : nextProgress
-    )
-  }
-
   return (
     <div className="text-white">
       <div className="mb-10 overflow-hidden rounded-3xl border border-white/10 bg-zinc-900">
@@ -97,27 +82,6 @@ export default function CourseDetailPage() {
           <p className="mt-4 max-w-3xl text-lg text-zinc-500">
             {course.description}
           </p>
-
-          <div className="mt-8">
-            <div className="mb-2 flex justify-between">
-              <span className="text-zinc-500">
-                Course Progress
-              </span>
-
-              <span>
-                {course.progress}%
-              </span>
-            </div>
-
-            <div className="h-4 overflow-hidden rounded-full bg-black">
-              <div
-                className="h-full rounded-full bg-white"
-                style={{
-                  width: `${course.progress}%`,
-                }}
-              />
-            </div>
-          </div>
         </div>
       </div>
 
@@ -170,9 +134,8 @@ export default function CourseDetailPage() {
               key={lesson.id}
               className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-900"
             >
-              <div className="aspect-video pointer-events-none">
+              <div className="aspect-video">
                 <iframe
-                  title={lesson.title}
                   src={lesson.video_url}
                   className="h-full w-full"
                   allowFullScreen
@@ -195,12 +158,7 @@ export default function CourseDetailPage() {
                   {lesson.duration}
                 </p>
 
-                <button
-                  onClick={
-                    handleCompleteLesson
-                  }
-                  className="mt-6 rounded-2xl bg-white px-6 py-3 font-semibold text-black"
-                >
+                <button className="mt-6 rounded-2xl bg-white px-6 py-3 font-semibold text-black">
                   Mark as Complete
                 </button>
               </div>

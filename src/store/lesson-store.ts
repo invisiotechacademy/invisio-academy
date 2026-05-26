@@ -1,9 +1,5 @@
 import { create } from "zustand"
 
-import {
-  persist,
-} from "zustand/middleware"
-
 interface Lesson {
   id: string
   courseId: string
@@ -21,55 +17,40 @@ interface LessonStore {
 }
 
 export const useLessonStore =
-  create<LessonStore>()(
-    persist(
-      (set) => ({
-        lessons: [
-          {
-            id: "1",
+  create<LessonStore>((set) => ({
+    lessons: [
+      {
+        id: "1",
 
-            courseId: "1",
+        courseId: "1",
 
-            title:
-              "Introduction",
+        title: "Introduction",
 
-            duration:
-              "12 min",
+        duration: "12 min",
 
-            video_url:
-              "https://www.youtube.com/embed/dGcsHMXbSOA",
-          },
-
-          {
-            id: "2",
-
-            courseId: "1",
-
-            title:
-              "Components",
-
-            duration:
-              "18 min",
-
-            video_url:
-              "https://www.youtube.com/embed/w7ejDZ8SWv8",
-          },
-        ],
-
-        addLesson: (
-          lesson
-        ) =>
-          set((state) => ({
-            lessons: [
-              ...state.lessons,
-              lesson,
-            ],
-          })),
-      }),
+        video_url:
+          "https://www.youtube.com/embed/dGcsHMXbSOA",
+      },
 
       {
-        name:
-          "invisio-lesson-storage",
-      }
-    )
-  )
+        id: "2",
+
+        courseId: "1",
+
+        title: "Components",
+
+        duration: "18 min",
+
+        video_url:
+          "https://www.youtube.com/embed/w7ejDZ8SWv8",
+      },
+    ],
+
+    addLesson: (lesson) =>
+      set((state) => ({
+        lessons: [
+          ...state.lessons,
+          lesson,
+        ],
+      })),
+  }))
