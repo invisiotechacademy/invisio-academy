@@ -42,6 +42,29 @@ export default function CourseDetailPage() {
   const [content, setContent] =
     useState("");
 
+  const [role, setRole] =
+    useState("");
+
+  async function fetchProfile() {
+    const {
+      data: { user },
+    } =
+      await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const { data } =
+      await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+    if (data) {
+      setRole(data.role);
+    }
+  }
+
   async function fetchCourse() {
     const { data } =
       await supabase
@@ -97,6 +120,7 @@ export default function CourseDetailPage() {
   }
 
   useEffect(() => {
+    fetchProfile();
     fetchCourse();
     fetchLessons();
   }, []);
@@ -206,6 +230,14 @@ export default function CourseDetailPage() {
             {course.description}
           </p>
 
+          {/* ROLE */}
+
+          <div className="mb-6 inline-block rounded-2xl border border-white/10 bg-zinc-900 px-4 py-2 text-sm">
+            {role === "admin"
+              ? "Admin"
+              : "Student"}
+          </div>
+
           {/* PROGRESS */}
 
           <div className="mb-8">
@@ -233,7 +265,7 @@ export default function CourseDetailPage() {
             {lessons.length} lessons
           </div>
 
-          {/* LESSON LIST */}
+          {/* LESSONS */}
 
           <div className="space-y-3">
             {lessons.map(
@@ -272,57 +304,59 @@ export default function CourseDetailPage() {
             )}
           </div>
 
-          {/* CREATE LESSON */}
+          {/* ADMIN LESSON CREATE */}
 
-          <div className="mt-10 rounded-3xl border border-white/10 bg-zinc-900 p-5">
-            <h2 className="mb-5 text-2xl font-bold">
-              Add Lesson
-            </h2>
+          {role === "admin" && (
+            <div className="mt-10 rounded-3xl border border-white/10 bg-zinc-900 p-5">
+              <h2 className="mb-5 text-2xl font-bold">
+                Add Lesson
+              </h2>
 
-            <div className="space-y-4">
-              <input
-                placeholder="Lesson title"
-                value={title}
-                onChange={(e) =>
-                  setTitle(
-                    e.target.value
-                  )
-                }
-                className="w-full rounded-2xl border border-white/10 bg-black px-4 py-3 outline-none"
-              />
+              <div className="space-y-4">
+                <input
+                  placeholder="Lesson title"
+                  value={title}
+                  onChange={(e) =>
+                    setTitle(
+                      e.target.value
+                    )
+                  }
+                  className="w-full rounded-2xl border border-white/10 bg-black px-4 py-3 outline-none"
+                />
 
-              <input
-                placeholder="Youtube URL"
-                value={videoUrl}
-                onChange={(e) =>
-                  setVideoUrl(
-                    e.target.value
-                  )
-                }
-                className="w-full rounded-2xl border border-white/10 bg-black px-4 py-3 outline-none"
-              />
+                <input
+                  placeholder="Youtube URL"
+                  value={videoUrl}
+                  onChange={(e) =>
+                    setVideoUrl(
+                      e.target.value
+                    )
+                  }
+                  className="w-full rounded-2xl border border-white/10 bg-black px-4 py-3 outline-none"
+                />
 
-              <textarea
-                placeholder="Lesson content"
-                value={content}
-                onChange={(e) =>
-                  setContent(
-                    e.target.value
-                  )
-                }
-                className="h-32 w-full rounded-2xl border border-white/10 bg-black px-4 py-3 outline-none"
-              />
+                <textarea
+                  placeholder="Lesson content"
+                  value={content}
+                  onChange={(e) =>
+                    setContent(
+                      e.target.value
+                    )
+                  }
+                  className="h-32 w-full rounded-2xl border border-white/10 bg-black px-4 py-3 outline-none"
+                />
 
-              <button
-                onClick={
-                  createLesson
-                }
-                className="w-full rounded-2xl bg-white py-4 font-bold text-black"
-              >
-                Create Lesson
-              </button>
+                <button
+                  onClick={
+                    createLesson
+                  }
+                  className="w-full rounded-2xl bg-white py-4 font-bold text-black"
+                >
+                  Create Lesson
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* PLAYER */}
