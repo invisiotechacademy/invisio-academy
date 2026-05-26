@@ -1,190 +1,231 @@
-import {
-  useEffect,
-  useState,
-} from "react"
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabase";
 
-import { Link } from "react-router-dom"
-
-import { supabase } from "../lib/supabase"
-
-interface Course {
-  id: number
-
-  title: string
-
-  description: string
-
-  image: string
-
-  progress: number
-}
+type Course = {
+  id: string;
+  title: string;
+  description: string;
+  image: string;
+};
 
 export default function CoursesPage() {
-  const [courses, setCourses] =
-    useState<Course[]>([])
+  const navigate = useNavigate();
+
+  const [courses, setCourses] = useState<Course[]>([]);
 
   const [title, setTitle] =
-    useState("")
+    useState("");
 
-  const [description, setDescription] =
-    useState("")
+  const [
+    description,
+    setDescription,
+  ] = useState("");
 
   const [image, setImage] =
-    useState("")
+    useState("");
 
-  async function getCourses() {
-    const { data } =
+  useEffect(() => {
+    fetchCourses();
+  }, []);
+
+  async function fetchCourses() {
+    const { data, error } =
       await supabase
         .from("courses")
         .select("*")
-        .order(
-          "created_at",
-          {
-            ascending: false,
-          }
-        )
+        .order("created_at", {
+          ascending: false,
+        });
 
-    if (data) {
-      setCourses(data)
+    if (!error && data) {
+      setCourses(data);
     }
   }
 
-  useEffect(() => {
-    getCourses()
-  }, [])
-
   async function handleCreateCourse() {
-    if (
-      !title ||
-      !description ||
-      !image
-    )
-      return
+    if (!title) return;
 
-    await supabase
+    const {
+      error,
+    } = await supabase
       .from("courses")
-      .insert({
-        title,
+      .insert([
+        {
+          title,
+          description,
+          image,
+        },
+      ]);
 
-        description,
+    if (!error) {
+      setTitle("");
+      setDescription("");
+      setImage("");
 
-        image,
-
-        progress: 0,
-      })
-
-    setTitle("")
-    setDescription("")
-    setImage("")
-
-    getCourses()
+      fetchCourses();
+    }
   }
 
   return (
-    <div className="text-white">
-      <div className="mb-12">
-        <h1 className="text-5xl font-bold">
-          Courses
-        </h1>
+    <div className="min-h-screen bg-black text-white">
+      <div className="flex">
+        {/* SIDEBAR */}
 
-        <p className="mt-4 text-zinc-500">
-          Manage your academy courses
-        </p>
-      </div>
+        <div className="w-[260px] border-r border-white/10 bg-zinc-950 p-6">
+          <h1 className="mb-10 text-3xl font-bold">
+            INVISIO
+          </h1>
 
-      <div className="mb-12 rounded-3xl border border-white/10 bg-zinc-900 p-8">
-        <h2 className="mb-6 text-3xl font-bold">
-          Create Course
-        </h2>
+          <div className="space-y-4">
+            <button className="w-full rounded-2xl bg-white px-5 py-4 text-left font-semibold text-black">
+              Dashboard
+            </button>
 
-        <div className="grid gap-4">
-          <input
-            placeholder="Course title"
-            value={title}
-            onChange={(e) =>
-              setTitle(e.target.value)
-            }
-            className="rounded-2xl border border-white/10 bg-black px-5 py-4 outline-none"
-          />
-
-          <textarea
-            placeholder="Course description"
-            value={description}
-            onChange={(e) =>
-              setDescription(
-                e.target.value
-              )
-            }
-            className="min-h-[120px] rounded-2xl border border-white/10 bg-black px-5 py-4 outline-none"
-          />
-
-          <input
-            placeholder="Thumbnail URL"
-            value={image}
-            onChange={(e) =>
-              setImage(e.target.value)
-            }
-            className="rounded-2xl border border-white/10 bg-black px-5 py-4 outline-none"
-          />
-
-          <button
-            onClick={
-              handleCreateCourse
-            }
-            className="rounded-2xl bg-white py-4 font-bold text-black transition hover:scale-[1.02]"
-          >
-            Create Course
-          </button>
+            <button className="w-full rounded-2xl bg-zinc-900 px-5 py-4 text-left font-semibold text-white">
+              Courses
+            </button>
+          </div>
         </div>
-      </div>
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {courses.map((course) => (
-          <Link
-            to={`/courses/${course.id}`}
-            key={course.id}
-            className="group overflow-hidden rounded-3xl border border-white/10 bg-zinc-900 transition duration-300 hover:-translate-y-2 hover:border-white/20 hover:bg-zinc-800"
-          >
-            <div className="aspect-video overflow-hidden">
-              <img
-                src={course.image}
-                className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
-              />
+        {/* CONTENT */}
+
+        <div className="flex-1 p-10">
+          {/* HEADER */}
+
+          <div className="mb-10 flex items-center justify-between">
+            <div>
+              <h1 className="text-5xl font-bold">
+                Courses
+              </h1>
+
+              <p className="mt-2 text-zinc-400">
+                Manage your academy
+              </p>
             </div>
 
-            <div className="p-6 backdrop-blur-xl">
-              <h2 className="text-2xl font-bold">
-                {course.title}
-              </h2>
+            <div className="flex items-center gap-4">
+              <input
+                placeholder="Search..."
+                className="rounded-2xl border border-white/10 bg-zinc-900 px-5 py-3 outline-none"
+              />
 
-              <p className="mt-3 text-zinc-500">
-                {course.description}
-              </p>
-
-              <div className="mt-6">
-                <div className="mb-2 flex justify-between text-sm">
-                  <span className="text-zinc-500">
-                    Progress
-                  </span>
-
-                  <span>
-                    {course.progress}%
-                  </span>
-                </div>
-
-                <div className="h-3 overflow-hidden rounded-full bg-zinc-800">
-                  <div
-                    className="h-full rounded-full bg-white"
-                    style={{
-                      width: `${course.progress}%`,
-                    }}
-                  />
-                </div>
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white font-bold text-black">
+                I
               </div>
             </div>
-          </Link>
-        ))}
+          </div>
+
+          {/* CREATE COURSE */}
+
+          <div className="mb-12 rounded-3xl border border-white/10 bg-zinc-900/50 p-8 backdrop-blur-xl">
+            <h2 className="mb-6 text-3xl font-bold">
+              Create New Course
+            </h2>
+
+            <div className="grid gap-5">
+              <input
+                placeholder="Course title"
+                value={title}
+                onChange={(e) =>
+                  setTitle(
+                    e.target.value
+                  )
+                }
+                className="rounded-2xl border border-white/10 bg-black/50 px-5 py-4 text-white outline-none transition focus:border-white"
+              />
+
+              <textarea
+                placeholder="Course description"
+                value={description}
+                onChange={(e) =>
+                  setDescription(
+                    e.target.value
+                  )
+                }
+                className="min-h-[140px] rounded-2xl border border-white/10 bg-black/50 px-5 py-4 text-white outline-none transition focus:border-white"
+              />
+
+              <input
+                placeholder="Thumbnail image URL"
+                value={image}
+                onChange={(e) =>
+                  setImage(
+                    e.target.value
+                  )
+                }
+                className="rounded-2xl border border-white/10 bg-black/50 px-5 py-4 text-white outline-none transition focus:border-white"
+              />
+
+              <button
+                onClick={
+                  handleCreateCourse
+                }
+                className="rounded-2xl bg-white py-4 text-lg font-bold text-black transition hover:scale-[1.02]"
+              >
+                Create Course
+              </button>
+            </div>
+          </div>
+
+          {/* COURSE GRID */}
+
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+            {courses.map((course) => (
+              <div
+                key={course.id}
+                className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-900"
+              >
+                <img
+                  src={
+                    course.image ||
+                    "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1200&auto=format&fit=crop"
+                  }
+                  alt={course.title}
+                  className="h-[220px] w-full object-cover"
+                />
+
+                <div className="p-6">
+                  <h2 className="mb-3 text-3xl font-bold">
+                    {course.title}
+                  </h2>
+
+                  <p className="mb-6 line-clamp-3 text-zinc-400">
+                    {
+                      course.description
+                    }
+                  </p>
+
+                  <div className="mb-5">
+                    <div className="mb-2 flex items-center justify-between text-sm text-zinc-400">
+                      <span>
+                        Progress
+                      </span>
+
+                      <span>0%</span>
+                    </div>
+
+                    <div className="h-3 overflow-hidden rounded-full bg-zinc-800">
+                      <div className="h-full w-[0%] bg-white" />
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() =>
+                      navigate(
+                        `/courses/${course.id}`
+                      )
+                    }
+                    className="w-full rounded-2xl bg-white py-4 font-bold text-black transition hover:scale-[1.02]"
+                  >
+                    Open Course
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
-  )
+  );
 }
