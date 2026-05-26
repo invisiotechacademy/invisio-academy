@@ -1,152 +1,162 @@
-import { useState } from "react"
+import { useState } from "react";
 
-import { useNavigate, Link } from "react-router-dom"
+import {
+  Link,
+  useNavigate,
+} from "react-router-dom";
 
-import { supabase } from "@/lib/supabase"
+import { supabase } from "../lib/supabase";
 
 export default function RegisterPage() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
-  const [name, setName] = useState("")
-
-  const [email, setEmail] = useState("")
+  const [email, setEmail] =
+    useState("");
 
   const [password, setPassword] =
-    useState("")
+    useState("");
 
   const [loading, setLoading] =
-    useState(false)
+    useState(false);
+
+  const [error, setError] =
+    useState("");
 
   async function handleRegister(
     e: React.FormEvent
   ) {
-    e.preventDefault()
+    e.preventDefault();
 
-    setLoading(true)
+    setError("");
 
-    const {
-      data,
-      error,
-    } = await supabase.auth.signUp({
-      email,
-      password,
-    })
+    if (!email || !password) {
+      setError(
+        "Please fill all fields"
+      );
 
-    if (error) {
-      alert(error.message)
-
-      setLoading(false)
-
-      return
+      return;
     }
 
-    if (data.user) {
-      const { error: profileError } =
+    try {
+      setLoading(true);
+
+      const {
+        data,
+        error:
+          registerError,
+      } =
+        await supabase.auth.signUp(
+          {
+            email,
+            password,
+          }
+        );
+
+      if (registerError) {
+        setError(
+          registerError.message
+        );
+
+        setLoading(false);
+
+        return;
+      }
+
+      if (data.user) {
         await supabase
           .from("profiles")
-          .insert({
-            id: data.user.id,
-            email,
-            full_name: name,
-            role: "student",
-          })
+          .insert([
+            {
+              id: data.user.id,
 
-      if (profileError) {
-        console.log(profileError)
+              email: email,
+
+              role: "student",
+            },
+          ]);
       }
+
+      setLoading(false);
+
+      navigate("/login");
+    } catch (err) {
+      setError(
+        "Something went wrong"
+      );
+
+      setLoading(false);
     }
-
-    alert("Account created successfully!")
-
-    navigate("/login")
-
-    setLoading(false)
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-black px-6">
-      <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-950 p-8">
-        <h1 className="mb-2 text-3xl font-bold text-white">
-          Create Account
-        </h1>
+    <div className="flex min-h-screen items-center justify-center bg-black px-6 text-white">
+      <div className="w-full max-w-md rounded-3xl border border-white/10 bg-zinc-950 p-10">
+        <div className="mb-10">
+          <h1 className="mb-3 text-5xl font-bold">
+            Register
+          </h1>
 
-        <p className="mb-8 text-zinc-400">
-          Join INVISIO Academy
-        </p>
+          <p className="text-zinc-400">
+            Create your account
+          </p>
+        </div>
 
         <form
-          onSubmit={handleRegister}
+          onSubmit={
+            handleRegister
+          }
           className="space-y-5"
         >
-          <div>
-            <label className="mb-2 block text-sm text-zinc-400">
-              Full Name
-            </label>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) =>
+              setEmail(
+                e.target.value
+              )
+            }
+            className="w-full rounded-2xl border border-white/10 bg-black px-5 py-4 outline-none transition focus:border-white"
+          />
 
-            <input
-              type="text"
-              value={name}
-              onChange={(e) =>
-                setName(e.target.value)
-              }
-              required
-              className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-white outline-none transition focus:border-zinc-600"
-            />
-          </div>
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) =>
+              setPassword(
+                e.target.value
+              )
+            }
+            className="w-full rounded-2xl border border-white/10 bg-black px-5 py-4 outline-none transition focus:border-white"
+          />
 
-          <div>
-            <label className="mb-2 block text-sm text-zinc-400">
-              Email
-            </label>
-
-            <input
-              type="email"
-              value={email}
-              onChange={(e) =>
-                setEmail(e.target.value)
-              }
-              required
-              className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-white outline-none transition focus:border-zinc-600"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm text-zinc-400">
-              Password
-            </label>
-
-            <input
-              type="password"
-              value={password}
-              onChange={(e) =>
-                setPassword(e.target.value)
-              }
-              required
-              className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-white outline-none transition focus:border-zinc-600"
-            />
-          </div>
+          {error && (
+            <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
+              {error}
+            </div>
+          )}
 
           <button
-            type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-white py-3 font-semibold text-black transition hover:opacity-90 disabled:opacity-50"
+            className="w-full rounded-2xl bg-white py-4 text-lg font-bold text-black transition hover:opacity-80"
           >
             {loading
-              ? "Creating Account..."
-              : "Register"}
+              ? "Creating..."
+              : "Create Account"}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-zinc-500">
+        <div className="mt-8 text-center text-zinc-400">
           Already have an account?{" "}
           <Link
             to="/login"
-            className="text-white"
+            className="font-semibold text-white"
           >
             Login
           </Link>
-        </p>
+        </div>
       </div>
     </div>
-  )
+  );
 }
