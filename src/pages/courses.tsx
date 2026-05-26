@@ -91,7 +91,7 @@ export default function CoursesPage() {
 
           <button
             onClick={handleCreateCourse}
-            className="rounded-2xl bg-white py-4 font-bold text-black"
+            className="rounded-2xl bg-white py-4 font-bold text-black transition hover:scale-[1.02]"
           >
             Create Course
           </button>
@@ -103,16 +103,16 @@ export default function CoursesPage() {
           <Link
             to={`/courses/${course.id}`}
             key={course.id}
-            className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-900 transition hover:scale-[1.02]"
+            className="group overflow-hidden rounded-3xl border border-white/10 bg-zinc-900 transition duration-300 hover:-translate-y-2 hover:border-white/20 hover:bg-zinc-800"
           >
             <div className="aspect-video overflow-hidden">
               <img
                 src={course.image}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
               />
             </div>
 
-            <div className="p-6">
+            <div className="p-6 backdrop-blur-xl">
               <h2 className="text-2xl font-bold">
                 {course.title}
               </h2>

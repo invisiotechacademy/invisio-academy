@@ -3,9 +3,7 @@ import {
   Search,
 } from "lucide-react"
 
-import {
-  Link,
-} from "react-router-dom"
+import { Link } from "react-router-dom"
 
 export default function Navbar() {
   return (
@@ -42,7 +40,7 @@ export default function Navbar() {
 
           <Link
             to="/settings"
-            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white font-bold text-black"
+            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white font-bold text-black transition hover:scale-110"
           >
             I
           </Link>
