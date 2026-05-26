@@ -1,82 +1,85 @@
 import {
+  BrowserRouter,
   Routes,
   Route,
   Navigate,
-} from "react-router-dom"
+} from "react-router-dom";
 
-import DashboardLayout from "./components/layout/dashboard-layout"
+import LoginPage from "./pages/login";
+import RegisterPage from "./pages/register";
 
-import DashboardPage from "./pages/dashboard"
-import CoursesPage from "./pages/courses"
-import CourseDetailPage from "./pages/course-detail"
-import SettingsPage from "./pages/settings"
+import DashboardPage from "./pages/dashboard";
+import CoursesPage from "./pages/courses";
+import CourseDetailPage from "./pages/course-detail";
+import SettingsPage from "./pages/settings";
 
-import LoginPage from "./pages/login"
-import RegisterPage from "./pages/register"
-
-import AuthGuard from "./components/auth/auth-guard"
+import AuthGuard from "./components/auth/auth-guard";
 
 export default function App() {
   return (
-    <Routes>
-      <Route
-        path="/login"
-        element={<LoginPage />}
-      />
+    <BrowserRouter>
+      <Routes>
+        {/* AUTH */}
 
-      <Route
-        path="/register"
-        element={<RegisterPage />}
-      />
+        <Route
+          path="/login"
+          element={<LoginPage />}
+        />
 
-      <Route
-        path="/"
-        element={
-          <AuthGuard>
-            <DashboardLayout>
+        <Route
+          path="/register"
+          element={
+            <RegisterPage />
+          }
+        />
+
+        {/* PRIVATE */}
+
+        <Route
+          path="/"
+          element={
+            <AuthGuard>
               <DashboardPage />
-            </DashboardLayout>
-          </AuthGuard>
-        }
-      />
+            </AuthGuard>
+          }
+        />
 
-      <Route
-        path="/courses"
-        element={
-          <AuthGuard>
-            <DashboardLayout>
+        <Route
+          path="/courses"
+          element={
+            <AuthGuard>
               <CoursesPage />
-            </DashboardLayout>
-          </AuthGuard>
-        }
-      />
+            </AuthGuard>
+          }
+        />
 
-      <Route
-        path="/courses/:id"
-        element={
-          <AuthGuard>
-            <DashboardLayout>
+        <Route
+          path="/courses/:id"
+          element={
+            <AuthGuard>
               <CourseDetailPage />
-            </DashboardLayout>
-          </AuthGuard>
-        }
-      />
+            </AuthGuard>
+          }
+        />
 
-      <Route
-        path="/settings"
-        element={
-          <AuthGuard>
-            <DashboardLayout>
+        <Route
+          path="/settings"
+          element={
+            <AuthGuard>
               <SettingsPage />
-            </DashboardLayout>
-          </AuthGuard>
-        }
-      />
+            </AuthGuard>
+          }
+        />
 
-      <Route
-        path="*"
-        element={<Navigate to="/" />}
-      />
-    </Routes>
-  )
+        {/* FALLBACK */}
+
+        <Route
+          path="*"
+          element={
+            <Navigate to="/" />
+          }
+        />
+      </Routes>
+    </BrowserRouter>
+  );
 }

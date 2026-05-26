@@ -1,20 +1,48 @@
-import { Navigate } from "react-router-dom"
-import { useAuthStore } from "../../store/auth-store"
+import { useEffect, useState } from "react";
 
-interface Props {
-  children: React.ReactNode
-}
+import { Navigate } from "react-router-dom";
+
+import { supabase } from "../../lib/supabase";
+
+type Props = {
+  children: React.ReactNode;
+};
 
 export default function AuthGuard({
   children,
 }: Props) {
-  const session = useAuthStore(
-    (state) => state.session
-  )
+  const [loading, setLoading] =
+    useState(true);
 
-  if (!session) {
-    return <Navigate to="/login" />
+  const [user, setUser] =
+    useState<any>(null);
+
+  useEffect(() => {
+    async function getUser() {
+      const {
+        data: { user },
+      } =
+        await supabase.auth.getUser();
+
+      setUser(user);
+
+      setLoading(false);
+    }
+
+    getUser();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black text-white">
+        Loading...
+      </div>
+    );
   }
 
-  return <>{children}</>
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+
+  return <>{children}</>;
 }

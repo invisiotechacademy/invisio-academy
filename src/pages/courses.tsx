@@ -3,9 +3,12 @@ import {
   useState,
 } from "react";
 
-import { Link } from "react-router-dom";
+import {
+  Link,
+  useLocation,
+} from "react-router-dom";
 
-import { supabase } from "@/lib/supabase";
+import { supabase } from "../lib/supabase";
 
 type Course = {
   id: number;
@@ -15,8 +18,17 @@ type Course = {
 };
 
 export default function CoursesPage() {
+  const location =
+    useLocation();
+
   const [courses, setCourses] =
     useState<Course[]>([]);
+
+  const [email, setEmail] =
+    useState("");
+
+  const [role, setRole] =
+    useState("");
 
   const [title, setTitle] =
     useState("");
@@ -29,34 +41,30 @@ export default function CoursesPage() {
   const [thumbnail, setThumbnail] =
     useState("");
 
-  const [loading, setLoading] =
-    useState(false);
-
-  const [role, setRole] =
-    useState("");
-
-  async function fetchProfile() {
+  async function getUser() {
     const {
       data: { user },
     } =
       await supabase.auth.getUser();
 
-    if (!user) return;
+    if (user) {
+      setEmail(user.email || "");
 
-    const { data } =
-      await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
+      const { data } =
+        await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
 
-    if (data) {
-      setRole(data.role);
+      if (data) {
+        setRole(data.role);
+      }
     }
   }
 
-  async function fetchCourses() {
-    const { data, error } =
+  async function getCourses() {
+    const { data } =
       await supabase
         .from("courses")
         .select("*")
@@ -64,15 +72,22 @@ export default function CoursesPage() {
           ascending: false,
         });
 
-    if (!error && data) {
+    if (data) {
       setCourses(data);
     }
   }
 
   useEffect(() => {
-    fetchCourses();
-    fetchProfile();
+    getUser();
+    getCourses();
   }, []);
+
+  async function logout() {
+    await supabase.auth.signOut();
+
+    window.location.href =
+      "/login";
+  }
 
   async function createCourse(
     e: React.FormEvent
@@ -81,44 +96,100 @@ export default function CoursesPage() {
 
     if (!title) return;
 
-    setLoading(true);
+    await supabase
+      .from("courses")
+      .insert([
+        {
+          title,
+          description,
+          thumbnail_url:
+            thumbnail,
+        },
+      ]);
 
-    const { error } =
-      await supabase
-        .from("courses")
-        .insert([
-          {
-            title,
-            description,
-            thumbnail_url:
-              thumbnail,
-          },
-        ]);
+    setTitle("");
+    setDescription("");
+    setThumbnail("");
 
-    setLoading(false);
-
-    if (!error) {
-      setTitle("");
-      setDescription("");
-      setThumbnail("");
-
-      fetchCourses();
-    }
+    getCourses();
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="mx-auto max-w-7xl p-8">
-        {/* HEADER */}
+    <div className="flex min-h-screen bg-black text-white">
+      {/* SIDEBAR */}
 
+      <div className="flex w-[270px] flex-col border-r border-white/10 bg-zinc-950 p-6">
+        <div className="mb-12">
+          <h1 className="text-4xl font-bold">
+            INVISIO
+          </h1>
+
+          <p className="mt-2 text-zinc-500">
+            LMS Platform
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          <Link
+            to="/"
+            className={`block rounded-2xl px-5 py-4 font-semibold transition ${
+              location.pathname ===
+              "/"
+                ? "bg-white text-black"
+                : "bg-zinc-900 text-white"
+            }`}
+          >
+            Dashboard
+          </Link>
+
+          <Link
+            to="/courses"
+            className={`block rounded-2xl px-5 py-4 font-semibold transition ${
+              location.pathname ===
+              "/courses"
+                ? "bg-white text-black"
+                : "bg-zinc-900 text-white"
+            }`}
+          >
+            Courses
+          </Link>
+
+          <button className="w-full rounded-2xl bg-zinc-900 px-5 py-4 text-left font-semibold">
+            Settings
+          </button>
+        </div>
+
+        <div className="mt-auto">
+          <div className="mb-5 rounded-2xl border border-white/10 bg-zinc-900 p-5">
+            <p className="text-sm text-zinc-500">
+              Logged in as
+            </p>
+
+            <p className="mt-2 font-semibold">
+              {email}
+            </p>
+          </div>
+
+          <button
+            onClick={logout}
+            className="w-full rounded-2xl border border-red-500/20 bg-red-500/10 px-5 py-4 font-semibold text-red-400"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+
+      {/* CONTENT */}
+
+      <div className="flex-1 p-10">
         <div className="mb-10 flex items-center justify-between">
           <div>
             <h1 className="text-5xl font-bold">
               Courses
             </h1>
 
-            <p className="mt-2 text-zinc-400">
-              Welcome to Invisio Academy
+            <p className="mt-3 text-zinc-400">
+              Explore your learning
             </p>
           </div>
 
@@ -132,9 +203,9 @@ export default function CoursesPage() {
         {/* ADMIN CREATE */}
 
         {role === "admin" && (
-          <div className="mb-10 rounded-3xl border border-white/10 bg-zinc-950 p-8">
+          <div className="mb-10 rounded-3xl bg-zinc-900 p-8">
             <h2 className="mb-6 text-3xl font-bold">
-              Create New Course
+              Create Course
             </h2>
 
             <form
@@ -144,7 +215,6 @@ export default function CoursesPage() {
               className="space-y-5"
             >
               <input
-                type="text"
                 placeholder="Course title"
                 value={title}
                 onChange={(e) =>
@@ -152,11 +222,11 @@ export default function CoursesPage() {
                     e.target.value
                   )
                 }
-                className="w-full rounded-2xl border border-white/10 bg-black px-5 py-4 outline-none"
+                className="w-full rounded-2xl bg-black px-5 py-4 outline-none"
               />
 
               <textarea
-                placeholder="Course description"
+                placeholder="Description"
                 value={
                   description
                 }
@@ -165,11 +235,10 @@ export default function CoursesPage() {
                     e.target.value
                   )
                 }
-                className="h-40 w-full rounded-2xl border border-white/10 bg-black px-5 py-4 outline-none"
+                className="h-32 w-full rounded-2xl bg-black px-5 py-4 outline-none"
               />
 
               <input
-                type="text"
                 placeholder="Thumbnail URL"
                 value={thumbnail}
                 onChange={(e) =>
@@ -177,16 +246,11 @@ export default function CoursesPage() {
                     e.target.value
                   )
                 }
-                className="w-full rounded-2xl border border-white/10 bg-black px-5 py-4 outline-none"
+                className="w-full rounded-2xl bg-black px-5 py-4 outline-none"
               />
 
-              <button
-                disabled={loading}
-                className="w-full rounded-2xl bg-white py-4 text-lg font-bold text-black"
-              >
-                {loading
-                  ? "Creating..."
-                  : "Create Course"}
+              <button className="w-full rounded-2xl bg-white py-4 font-bold text-black">
+                Create Course
               </button>
             </form>
           </div>
@@ -197,36 +261,31 @@ export default function CoursesPage() {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
           {courses.map((course) => (
             <Link
-              to={`/courses/${course.id}`}
               key={course.id}
-              className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-950 transition-all duration-300 hover:scale-[1.02]"
+              to={`/courses/${course.id}`}
+              className="overflow-hidden rounded-3xl bg-zinc-900 transition hover:scale-[1.02]"
             >
-              <div className="h-56 overflow-hidden bg-zinc-900">
-                {course.thumbnail_url ? (
-                  <img
-                    src={
-                      course.thumbnail_url
-                    }
-                    alt={course.title}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-zinc-500">
-                    No Thumbnail
-                  </div>
-                )}
-              </div>
+              <img
+                src={
+                  course.thumbnail_url
+                }
+                className="h-56 w-full object-cover"
+              />
 
               <div className="p-6">
-                <h2 className="mb-3 text-3xl font-bold">
+                <h2 className="text-3xl font-bold">
                   {course.title}
                 </h2>
 
-                <p className="line-clamp-2 text-zinc-400">
+                <p className="mt-3 line-clamp-2 text-zinc-400">
                   {
                     course.description
                   }
                 </p>
+
+                <button className="mt-6 w-full rounded-2xl bg-white px-5 py-4 font-bold text-black">
+                  Open Course
+                </button>
               </div>
             </Link>
           ))}
