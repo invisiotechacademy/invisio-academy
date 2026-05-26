@@ -3,14 +3,14 @@ import { useParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
 type Lesson = {
-  id: string;
+  id: number;
   title: string;
   video_url: string;
   content: string;
 };
 
 type Course = {
-  id: string;
+  id: number;
   title: string;
   description: string;
   thumbnail_url: string;
@@ -31,7 +31,7 @@ export default function CourseDetailPage() {
   const [
     completedLessons,
     setCompletedLessons,
-  ] = useState<string[]>([]);
+  ] = useState<number[]>([]);
 
   const [title, setTitle] =
     useState("");
@@ -67,6 +67,28 @@ export default function CourseDetailPage() {
 
     if (data) {
       setLessons(data);
+
+      const savedLesson =
+        localStorage.getItem(
+          `lesson-${id}`
+        );
+
+      if (savedLesson) {
+        const foundLesson =
+          data.find(
+            (lesson) =>
+              lesson.id ===
+              Number(savedLesson)
+          );
+
+        if (foundLesson) {
+          setSelectedLesson(
+            foundLesson
+          );
+
+          return;
+        }
+      }
 
       if (data.length > 0) {
         setSelectedLesson(data[0]);
@@ -118,6 +140,17 @@ export default function CourseDetailPage() {
     fetchLessons();
   }
 
+  function handleSelectLesson(
+    lesson: Lesson
+  ) {
+    setSelectedLesson(lesson);
+
+    localStorage.setItem(
+      `lesson-${id}`,
+      lesson.id.toString()
+    );
+  }
+
   function handleCompleteLesson() {
     if (!selectedLesson)
       return;
@@ -135,6 +168,15 @@ export default function CourseDetailPage() {
     ]);
   }
 
+  const progress =
+    lessons.length > 0
+      ? Math.round(
+          (completedLessons.length /
+            lessons.length) *
+            100
+        )
+      : 0;
+
   if (!course) {
     return (
       <div className="p-10 text-white">
@@ -148,14 +190,48 @@ export default function CourseDetailPage() {
       <div className="flex">
         {/* SIDEBAR */}
 
-        <div className="w-[320px] border-r border-white/10 bg-zinc-950 p-6">
+        <div className="w-[340px] border-r border-white/10 bg-zinc-950 p-6">
+          <img
+            src={
+              course.thumbnail_url
+            }
+            className="mb-6 h-48 w-full rounded-3xl object-cover"
+          />
+
           <h1 className="mb-2 text-3xl font-bold">
             {course.title}
           </h1>
 
-          <p className="mb-8 text-zinc-400">
+          <p className="mb-6 text-zinc-400">
             {course.description}
           </p>
+
+          {/* PROGRESS */}
+
+          <div className="mb-8">
+            <div className="mb-2 flex items-center justify-between text-sm text-zinc-400">
+              <span>Progress</span>
+
+              <span>
+                {progress}%
+              </span>
+            </div>
+
+            <div className="h-3 overflow-hidden rounded-full bg-zinc-800">
+              <div
+                className="h-full rounded-full bg-white transition-all"
+                style={{
+                  width: `${progress}%`,
+                }}
+              />
+            </div>
+          </div>
+
+          {/* LESSON COUNT */}
+
+          <div className="mb-6 text-sm text-zinc-500">
+            {lessons.length} lessons
+          </div>
 
           {/* LESSON LIST */}
 
@@ -165,7 +241,7 @@ export default function CourseDetailPage() {
                 <button
                   key={lesson.id}
                   onClick={() =>
-                    setSelectedLesson(
+                    handleSelectLesson(
                       lesson
                     )
                   }
@@ -241,7 +317,7 @@ export default function CourseDetailPage() {
                 onClick={
                   createLesson
                 }
-                className="w-full rounded-2xl bg-white py-4 font-bold text-black transition hover:opacity-80"
+                className="w-full rounded-2xl bg-white py-4 font-bold text-black"
               >
                 Create Lesson
               </button>
