@@ -4,9 +4,19 @@ import { Link } from "react-router-dom";
 
 import toast from "react-hot-toast";
 
+import {
+  Trash2,
+} from "lucide-react";
+
 import MainLayout from "../components/layouts/main-layout";
 
 import { supabase } from "../lib/supabase";
+
+import Loading from "../components/loading";
+
+import EmptyState from "../components/empty-state";
+
+import ErrorState from "../components/error-state";
 
 type Course = {
   id: string;
@@ -37,19 +47,30 @@ export default function CoursesPage() {
     useState<File | null>(null);
 
   const [loading, setLoading] =
-    useState(false);
+    useState(true);
+
+  const [error, setError] =
+    useState("");
 
   const [role, setRole] =
     useState("");
 
   useEffect(() => {
-    getCourses();
-    getProfile();
+    loadData();
   }, []);
 
   useEffect(() => {
     filterCourses();
   }, [search, courses]);
+
+  async function loadData() {
+    await Promise.all([
+      getCourses(),
+      getProfile(),
+    ]);
+
+    setLoading(false);
+  }
 
   function filterCourses() {
     const filtered =
@@ -69,7 +90,8 @@ export default function CoursesPage() {
   async function getProfile() {
     const {
       data: { user },
-    } = await supabase.auth.getUser();
+    } =
+      await supabase.auth.getUser();
 
     if (!user) return;
 
@@ -95,12 +117,16 @@ export default function CoursesPage() {
         });
 
     if (error) {
-      console.log(error);
+      setError(
+        "Failed to load courses"
+      );
+
       return;
     }
 
     if (data) {
       setCourses(data);
+
       setFilteredCourses(
         data
       );
@@ -122,8 +148,6 @@ export default function CoursesPage() {
         .upload(fileName, image);
 
     if (error) {
-      console.log(error);
-
       toast.error(
         "Image upload failed ❌"
       );
@@ -164,8 +188,6 @@ export default function CoursesPage() {
     setLoading(false);
 
     if (error) {
-      console.log(error);
-
       toast.error(
         "Course create failed ❌"
       );
@@ -182,6 +204,42 @@ export default function CoursesPage() {
     setImage(null);
 
     getCourses();
+  }
+
+  async function deleteCourse(
+    id: string
+  ) {
+    const confirmDelete =
+      window.confirm(
+        "Delete this course?"
+      );
+
+    if (!confirmDelete)
+      return;
+
+    const { error } =
+      await supabase
+        .from("courses")
+        .delete()
+        .eq("id", id);
+
+    if (error) {
+      toast.error(
+        "Delete failed ❌"
+      );
+
+      return;
+    }
+
+    toast.success(
+      "Course deleted 🗑️"
+    );
+
+    getCourses();
+  }
+
+  if (loading) {
+    return <Loading />;
   }
 
   return (
@@ -220,6 +278,16 @@ export default function CoursesPage() {
             className="w-full rounded-2xl border border-white/10 bg-zinc-950 px-5 py-4 outline-none"
           />
         </div>
+
+        {/* ERROR */}
+
+        {error && (
+          <div className="mb-10">
+            <ErrorState
+              message={error}
+            />
+          </div>
+        )}
 
         {/* ADMIN */}
 
@@ -288,43 +356,82 @@ export default function CoursesPage() {
           </div>
         )}
 
+        {/* EMPTY */}
+
+        {filteredCourses.length ===
+          0 && (
+          <EmptyState
+            title="No Courses Found"
+            description="Try another search or create a new course 🚀"
+          />
+        )}
+
         {/* COURSES */}
 
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
           {filteredCourses.map(
             (course) => (
-              <Link
+              <div
                 key={course.id}
-                to={`/courses/${course.id}`}
-                className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-950 transition hover:scale-[1.02]"
+                className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-950"
               >
-                <img
-                  src={
-                    course.thumbnail_url ||
-                    "https://images.unsplash.com/photo-1498050108023-c5249f4df085"
-                  }
-                  alt={
-                    course.title
-                  }
-                  className="h-56 w-full object-cover"
-                />
-
-                <div className="p-6">
-                  <h2 className="mb-3 text-3xl font-bold">
-                    {course.title}
-                  </h2>
-
-                  <p className="line-clamp-3 text-zinc-400">
-                    {
-                      course.description
+                <Link
+                  to={`/courses/${course.id}`}
+                >
+                  <img
+                    src={
+                      course.thumbnail_url ||
+                      "https://images.unsplash.com/photo-1498050108023-c5249f4df085"
                     }
-                  </p>
+                    alt={
+                      course.title
+                    }
+                    className="h-56 w-full object-cover"
+                  />
 
-                  <button className="mt-6 w-full rounded-2xl bg-white py-3 font-semibold text-black">
+                  <div className="p-6">
+                    <h2 className="mb-3 text-3xl font-bold">
+                      {
+                        course.title
+                      }
+                    </h2>
+
+                    <p className="line-clamp-3 text-zinc-400">
+                      {
+                        course.description
+                      }
+                    </p>
+                  </div>
+                </Link>
+
+                <div className="p-6 pt-0">
+                  <Link
+                    to={`/courses/${course.id}`}
+                    className="block w-full rounded-2xl bg-white py-3 text-center font-semibold text-black"
+                  >
                     Open Course
-                  </button>
+                  </Link>
+
+                  {role ===
+                    "admin" && (
+                    <button
+                      onClick={() =>
+                        deleteCourse(
+                          course.id
+                        )
+                      }
+                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/10 py-3 font-semibold text-red-400 transition hover:bg-red-500/20"
+                    >
+                      <Trash2
+                        size={
+                          18
+                        }
+                      />
+                      Delete Course
+                    </button>
+                  )}
                 </div>
-              </Link>
+              </div>
             )
           )}
         </div>

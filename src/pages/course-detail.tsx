@@ -10,6 +10,10 @@ import {
 
 import toast from "react-hot-toast";
 
+import {
+  Trash2,
+} from "lucide-react";
+
 import MainLayout from "../components/layouts/main-layout";
 
 import { supabase } from "../lib/supabase";
@@ -252,6 +256,38 @@ export default function CourseDetailPage() {
     getLessons();
   }
 
+  async function deleteLesson(
+    lessonId: number
+  ) {
+    const confirmDelete =
+      window.confirm(
+        "Delete this lesson?"
+      );
+
+    if (!confirmDelete)
+      return;
+
+    const { error } =
+      await supabase
+        .from("lessons")
+        .delete()
+        .eq("id", lessonId);
+
+    if (error) {
+      toast.error(
+        "Delete failed ❌"
+      );
+
+      return;
+    }
+
+    toast.success(
+      "Lesson deleted 🗑️"
+    );
+
+    getLessons();
+  }
+
   async function completeLesson() {
     if (!selectedLesson)
       return;
@@ -362,38 +398,61 @@ export default function CourseDetailPage() {
               <div className="space-y-4">
                 {lessons.map(
                   (lesson) => (
-                    <button
+                    <div
                       key={
                         lesson.id
                       }
-                      onClick={() =>
-                        setSelectedLesson(
-                          lesson
-                        )
-                      }
-                      className={`w-full rounded-2xl p-4 text-left transition ${
+                      className={`rounded-2xl p-4 transition ${
                         selectedLesson?.id ===
                         lesson.id
                           ? "bg-white text-black"
                           : "bg-zinc-900 text-white"
                       }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <span>
-                          {
-                            lesson.title
-                          }
-                        </span>
-
-                        {completedLessons.includes(
-                          lesson.id
-                        ) && (
+                      <button
+                        onClick={() =>
+                          setSelectedLesson(
+                            lesson
+                          )
+                        }
+                        className="w-full text-left"
+                      >
+                        <div className="flex items-center justify-between">
                           <span>
-                            ✅
+                            {
+                              lesson.title
+                            }
                           </span>
-                        )}
-                      </div>
-                    </button>
+
+                          {completedLessons.includes(
+                            lesson.id
+                          ) && (
+                            <span>
+                              ✅
+                            </span>
+                          )}
+                        </div>
+                      </button>
+
+                      {role ===
+                        "admin" && (
+                        <button
+                          onClick={() =>
+                            deleteLesson(
+                              lesson.id
+                            )
+                          }
+                          className="mt-4 flex items-center gap-2 text-red-400"
+                        >
+                          <Trash2
+                            size={
+                              16
+                            }
+                          />
+                          Delete
+                        </button>
+                      )}
+                    </div>
                   )
                 )}
               </div>

@@ -7,6 +7,12 @@ import { Link } from "react-router-dom";
 
 import MainLayout from "../components/layouts/main-layout";
 
+import Topbar from "../components/topbar";
+
+import Loading from "../components/loading";
+
+import EmptyState from "../components/empty-state";
+
 import { supabase } from "../lib/supabase";
 
 type Stats = {
@@ -28,6 +34,9 @@ type Enrollment = {
 };
 
 export default function DashboardPage() {
+  const [loading, setLoading] =
+    useState(true);
+
   const [stats, setStats] =
     useState<Stats>({
       users: 0,
@@ -44,9 +53,17 @@ export default function DashboardPage() {
   >([]);
 
   useEffect(() => {
-    getStats();
-    getEnrollments();
+    loadData();
   }, []);
+
+  async function loadData() {
+    await Promise.all([
+      getStats(),
+      getEnrollments(),
+    ]);
+
+    setLoading(false);
+  }
 
   async function getStats() {
     const users =
@@ -127,20 +144,14 @@ export default function DashboardPage() {
     }
   }
 
+  if (loading) {
+    return <Loading />;
+  }
+
   return (
     <MainLayout>
       <div className="min-h-screen bg-black p-10 text-white">
-        {/* HEADER */}
-
-        <div className="mb-12">
-          <h1 className="text-6xl font-bold">
-            Dashboard
-          </h1>
-
-          <p className="mt-2 text-zinc-500">
-            Welcome back 👋
-          </p>
-        </div>
+        <Topbar title="Dashboard" />
 
         {/* STATS */}
 
@@ -186,7 +197,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* CONTINUE LEARNING */}
+        {/* CONTINUE */}
 
         <div className="mt-14">
           <div className="mb-8 flex items-center justify-between">
@@ -204,17 +215,10 @@ export default function DashboardPage() {
 
           {enrollments.length ===
           0 ? (
-            <div className="rounded-3xl border border-white/10 bg-zinc-950 p-10 text-center">
-              <h3 className="text-3xl font-bold">
-                No enrolled courses
-              </h3>
-
-              <p className="mt-4 text-zinc-400">
-                Enroll into a course
-                to continue learning
-                🚀
-              </p>
-            </div>
+            <EmptyState
+              title="No enrolled courses"
+              description="Enroll into a course to continue learning 🚀"
+            />
           ) : (
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
               {enrollments.map(
