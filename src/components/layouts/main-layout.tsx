@@ -6,9 +6,11 @@ import {
 import {
   Menu,
   X,
+  ChevronDown,
 } from "lucide-react";
 
 import {
+  useEffect,
   useState,
 } from "react";
 
@@ -16,6 +18,11 @@ import { supabase } from "../../lib/supabase";
 
 type Props = {
   children: React.ReactNode;
+};
+
+type Profile = {
+  username: string;
+  avatar_url: string;
 };
 
 export default function MainLayout({
@@ -26,6 +33,42 @@ export default function MainLayout({
 
   const [open, setOpen] =
     useState(false);
+
+  const [
+    profileOpen,
+    setProfileOpen,
+  ] = useState(false);
+
+  const [profile, setProfile] =
+    useState<Profile>({
+      username: "User",
+      avatar_url: "",
+    });
+
+  useEffect(() => {
+    getProfile();
+  }, []);
+
+  async function getProfile() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const { data } =
+      await supabase
+        .from("profiles")
+        .select(
+          "username, avatar_url"
+        )
+        .eq("id", user.id)
+        .single();
+
+    if (data) {
+      setProfile(data);
+    }
+  }
 
   async function logout() {
     await supabase.auth.signOut();
@@ -65,6 +108,8 @@ export default function MainLayout({
             : "-translate-x-full"
         }`}
       >
+        {/* LOGO */}
+
         <div className="mb-12 mt-16 lg:mt-0">
           <h1 className="text-4xl font-bold">
             INVISIO
@@ -73,6 +118,62 @@ export default function MainLayout({
           <p className="mt-2 text-zinc-500">
             LMS Platform
           </p>
+        </div>
+
+        {/* PROFILE */}
+
+        <div className="relative mb-8">
+          <button
+            onClick={() =>
+              setProfileOpen(
+                !profileOpen
+              )
+            }
+            className="flex w-full items-center justify-between rounded-2xl bg-zinc-900 p-4"
+          >
+            <div className="flex items-center gap-3">
+              <img
+                src={
+                  profile.avatar_url ||
+                  "https://ui-avatars.com/api/?name=User"
+                }
+                alt="avatar"
+                className="h-12 w-12 rounded-full object-cover"
+              />
+
+              <div className="text-left">
+                <p className="font-bold">
+                  {
+                    profile.username
+                  }
+                </p>
+
+                <p className="text-sm text-zinc-500">
+                  Student
+                </p>
+              </div>
+            </div>
+
+            <ChevronDown />
+          </button>
+
+          {profileOpen && (
+            <div className="absolute left-0 top-[90px] w-full rounded-2xl border border-white/10 bg-zinc-950 p-3">
+              <Link
+                to="/settings"
+                className="block rounded-xl px-4 py-3 transition hover:bg-zinc-900"
+              >
+                Settings
+              </Link>
+
+              <button
+                onClick={logout}
+                className="mt-2 w-full rounded-xl px-4 py-3 text-left transition hover:bg-red-500/10 hover:text-red-400"
+              >
+                Logout
+              </button>
+            </div>
+          )}
         </div>
 
         {/* MENU */}
@@ -123,17 +224,6 @@ export default function MainLayout({
           >
             Settings
           </Link>
-        </div>
-
-        {/* FOOTER */}
-
-        <div className="mt-auto">
-          <button
-            onClick={logout}
-            className="w-full rounded-2xl border border-red-500/20 bg-red-500/10 px-5 py-4 font-semibold text-red-400 transition hover:bg-red-500/20"
-          >
-            Logout
-          </button>
         </div>
       </div>
 

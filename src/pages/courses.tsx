@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
+
 import { Link } from "react-router-dom";
+
 import toast from "react-hot-toast";
 
 import MainLayout from "../components/layouts/main-layout";
+
 import { supabase } from "../lib/supabase";
 
 type Course = {
@@ -13,9 +16,20 @@ type Course = {
 };
 
 export default function CoursesPage() {
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [courses, setCourses] =
+    useState<Course[]>([]);
 
-  const [title, setTitle] = useState("");
+  const [
+    filteredCourses,
+    setFilteredCourses,
+  ] = useState<Course[]>([]);
+
+  const [search, setSearch] =
+    useState("");
+
+  const [title, setTitle] =
+    useState("");
+
   const [description, setDescription] =
     useState("");
 
@@ -25,9 +39,51 @@ export default function CoursesPage() {
   const [loading, setLoading] =
     useState(false);
 
+  const [role, setRole] =
+    useState("");
+
   useEffect(() => {
     getCourses();
+    getProfile();
   }, []);
+
+  useEffect(() => {
+    filterCourses();
+  }, [search, courses]);
+
+  function filterCourses() {
+    const filtered =
+      courses.filter((course) =>
+        course.title
+          .toLowerCase()
+          .includes(
+            search.toLowerCase()
+          )
+      );
+
+    setFilteredCourses(
+      filtered
+    );
+  }
+
+  async function getProfile() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const { data } =
+      await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+    if (data) {
+      setRole(data.role);
+    }
+  }
 
   async function getCourses() {
     const { data, error } =
@@ -45,6 +101,9 @@ export default function CoursesPage() {
 
     if (data) {
       setCourses(data);
+      setFilteredCourses(
+        data
+      );
     }
   }
 
@@ -130,113 +189,144 @@ export default function CoursesPage() {
       <div className="min-h-screen bg-black p-10 text-white">
         {/* HEADER */}
 
-        <div className="mb-10 flex items-center justify-between">
+        <div className="mb-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-6xl font-bold">
               Courses
             </h1>
 
             <p className="mt-2 text-zinc-500">
-              Manage your academy
+              Explore academy
             </p>
+          </div>
+
+          <div className="rounded-2xl bg-zinc-900 px-5 py-3">
+            Role: {role}
           </div>
         </div>
 
-        {/* CREATE COURSE */}
+        {/* SEARCH */}
 
-        <div className="mb-12 rounded-3xl border border-white/10 bg-zinc-950 p-8">
-          <h2 className="mb-6 text-3xl font-bold">
-            Create New Course
-          </h2>
-
-          <form
-            onSubmit={createCourse}
-            className="space-y-5"
-          >
-            <input
-              type="text"
-              placeholder="Course title"
-              value={title}
-              onChange={(e) =>
-                setTitle(
-                  e.target.value
-                )
-              }
-              className="w-full rounded-2xl border border-white/10 bg-black px-5 py-4 outline-none"
-              required
-            />
-
-            <textarea
-              placeholder="Course description"
-              value={description}
-              onChange={(e) =>
-                setDescription(
-                  e.target.value
-                )
-              }
-              className="h-40 w-full rounded-2xl border border-white/10 bg-black px-5 py-4 outline-none"
-              required
-            />
-
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) =>
-                setImage(
-                  e.target
-                    .files?.[0] ||
-                    null
-                )
-              }
-              className="w-full rounded-2xl border border-white/10 bg-black px-5 py-4"
-            />
-
-            <button
-              disabled={loading}
-              className="w-full rounded-2xl bg-white py-4 text-lg font-bold text-black transition hover:opacity-80 disabled:opacity-50"
-            >
-              {loading
-                ? "Creating..."
-                : "Create Course"}
-            </button>
-          </form>
+        <div className="mb-10">
+          <input
+            type="text"
+            placeholder="Search courses..."
+            value={search}
+            onChange={(e) =>
+              setSearch(
+                e.target.value
+              )
+            }
+            className="w-full rounded-2xl border border-white/10 bg-zinc-950 px-5 py-4 outline-none"
+          />
         </div>
 
-        {/* COURSES GRID */}
+        {/* ADMIN */}
 
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
-          {courses.map((course) => (
-            <Link
-              key={course.id}
-              to={`/courses/${course.id}`}
-              className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-950 transition hover:scale-[1.02]"
+        {role === "admin" && (
+          <div className="mb-12 rounded-3xl border border-white/10 bg-zinc-950 p-8">
+            <h2 className="mb-6 text-3xl font-bold">
+              Create New Course
+            </h2>
+
+            <form
+              onSubmit={
+                createCourse
+              }
+              className="space-y-5"
             >
-              <img
-                src={
-                  course.thumbnail_url ||
-                  "https://images.unsplash.com/photo-1498050108023-c5249f4df085"
+              <input
+                type="text"
+                placeholder="Course title"
+                value={title}
+                onChange={(e) =>
+                  setTitle(
+                    e.target.value
+                  )
                 }
-                alt={course.title}
-                className="h-56 w-full object-cover"
+                className="w-full rounded-2xl border border-white/10 bg-black px-5 py-4 outline-none"
+                required
               />
 
-              <div className="p-6">
-                <h2 className="mb-3 text-3xl font-bold">
-                  {course.title}
-                </h2>
+              <textarea
+                placeholder="Course description"
+                value={
+                  description
+                }
+                onChange={(e) =>
+                  setDescription(
+                    e.target
+                      .value
+                  )
+                }
+                className="h-40 w-full rounded-2xl border border-white/10 bg-black px-5 py-4 outline-none"
+                required
+              />
 
-                <p className="line-clamp-3 text-zinc-400">
-                  {
-                    course.description
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) =>
+                  setImage(
+                    e.target
+                      .files?.[0] ||
+                      null
+                  )
+                }
+                className="w-full rounded-2xl border border-white/10 bg-black px-5 py-4"
+              />
+
+              <button
+                disabled={loading}
+                className="w-full rounded-2xl bg-white py-4 text-lg font-bold text-black transition hover:opacity-80 disabled:opacity-50"
+              >
+                {loading
+                  ? "Creating..."
+                  : "Create Course"}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* COURSES */}
+
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+          {filteredCourses.map(
+            (course) => (
+              <Link
+                key={course.id}
+                to={`/courses/${course.id}`}
+                className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-950 transition hover:scale-[1.02]"
+              >
+                <img
+                  src={
+                    course.thumbnail_url ||
+                    "https://images.unsplash.com/photo-1498050108023-c5249f4df085"
                   }
-                </p>
+                  alt={
+                    course.title
+                  }
+                  className="h-56 w-full object-cover"
+                />
 
-                <button className="mt-6 w-full rounded-2xl bg-white py-3 font-semibold text-black">
-                  Open Course
-                </button>
-              </div>
-            </Link>
-          ))}
+                <div className="p-6">
+                  <h2 className="mb-3 text-3xl font-bold">
+                    {course.title}
+                  </h2>
+
+                  <p className="line-clamp-3 text-zinc-400">
+                    {
+                      course.description
+                    }
+                  </p>
+
+                  <button className="mt-6 w-full rounded-2xl bg-white py-3 font-semibold text-black">
+                    Open Course
+                  </button>
+                </div>
+              </Link>
+            )
+          )}
         </div>
       </div>
     </MainLayout>
