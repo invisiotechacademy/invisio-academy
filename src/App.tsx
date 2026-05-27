@@ -2,18 +2,17 @@ import {
   BrowserRouter,
   Routes,
   Route,
-  Navigate,
 } from "react-router-dom";
 
 import DashboardPage from "./pages/dashboard";
 
+import CoursesPage from "./pages/courses";
+
+import CourseDetailsPage from "./pages/course-details";
+
 import LoginPage from "./pages/login";
 
 import RegisterPage from "./pages/register";
-
-import CoursesPage from "./pages/courses";
-
-import CourseDetailPage from "./pages/course-detail";
 
 import SettingsPage from "./pages/settings";
 
@@ -23,55 +22,55 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* AUTH */}
-
-        <Route
-          path="/login"
-          element={<LoginPage />}
-        />
-
-        <Route
-          path="/register"
-          element={<RegisterPage />}
-        />
-
-        {/* MAIN */}
-
         <Route
           path="/"
-          element={<DashboardPage />}
+          element={
+            <DashboardPage />
+          }
         />
 
         <Route
           path="/courses"
-          element={<CoursesPage />}
+          element={
+            <CoursesPage />
+          }
         />
 
         <Route
           path="/courses/:id"
           element={
-            <CourseDetailPage />
+            <CourseDetailsPage />
+          }
+        />
+
+        <Route
+          path="/login"
+          element={
+            <LoginPage />
+          }
+        />
+
+        <Route
+          path="/register"
+          element={
+            <RegisterPage />
           }
         />
 
         <Route
           path="/settings"
-          element={<SettingsPage />}
+          element={
+            <SettingsPage />
+          }
         />
 
-        {/* FALLBACK */}
-
         <Route
-          path="*"
+          path="/certificate/:id"
           element={
-            <Navigate to="/" />
+            <CertificatePage />
           }
         />
       </Routes>
-          <Route
-          path="/certificate/:id"
-          element={<CertificatePage />}
-        />  
     </BrowserRouter>
   );
 }
