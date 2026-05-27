@@ -1,211 +1,211 @@
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
-import {
-  Link,
-  useLocation,
-} from "react-router-dom";
-
+import MainLayout from "../components/layouts/main-layout";
 import { supabase } from "../lib/supabase";
 
 export default function SettingsPage() {
-  const location =
-    useLocation();
+  const [loading, setLoading] =
+    useState(false);
 
-  const [email, setEmail] =
+  const [username, setUsername] =
     useState("");
 
-  const [role, setRole] =
+  const [bio, setBio] =
     useState("");
 
-  const [password,
-    setPassword,
-  ] = useState("");
+  const [avatar, setAvatar] =
+    useState<File | null>(null);
 
-  async function getUser() {
+  const [avatarUrl, setAvatarUrl] =
+    useState("");
+
+  useEffect(() => {
+    getProfile();
+  }, []);
+
+  async function getProfile() {
     const {
       data: { user },
-    } =
-      await supabase.auth.getUser();
+    } = await supabase.auth.getUser();
 
-    if (user) {
-      setEmail(user.email || "");
+    if (!user) return;
 
-      const { data } =
-        await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
+    const { data, error } =
+      await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
 
-      if (data) {
-        setRole(data.role);
-      }
+    if (error) {
+      console.log(error);
+      return;
+    }
+
+    if (data) {
+      setUsername(
+        data.username || ""
+      );
+
+      setBio(data.bio || "");
+
+      setAvatarUrl(
+        data.avatar_url || ""
+      );
     }
   }
 
-  useEffect(() => {
-    getUser();
-  }, []);
+  async function uploadAvatar() {
+    if (!avatar) return avatarUrl;
 
-  async function logout() {
-    await supabase.auth.signOut();
+    const fileExt =
+      avatar.name.split(".").pop();
 
-    window.location.href =
-      "/login";
+    const fileName =
+      `${crypto.randomUUID()}.${fileExt}`;
+
+    const { error } =
+      await supabase.storage
+        .from("avatars")
+        .upload(fileName, avatar);
+
+    if (error) {
+      console.log(error);
+
+      toast.error(
+        "Avatar upload failed ❌"
+      );
+
+      return avatarUrl;
+    }
+
+    const { data } =
+      supabase.storage
+        .from("avatars")
+        .getPublicUrl(fileName);
+
+    return data.publicUrl;
   }
 
-  async function updatePassword() {
-    if (!password) return;
+  async function updateProfile(
+    e: React.FormEvent
+  ) {
+    e.preventDefault();
 
-    await supabase.auth.updateUser(
-      {
-        password,
-      }
+    setLoading(true);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const uploadedAvatar =
+      await uploadAvatar();
+
+    const { error } =
+      await supabase
+        .from("profiles")
+        .upsert({
+          id: user.id,
+          username,
+          bio,
+          avatar_url:
+            uploadedAvatar,
+        });
+
+    setLoading(false);
+
+    if (error) {
+      console.log(error);
+
+      toast.error(
+        "Update failed ❌"
+      );
+
+      return;
+    }
+
+    toast.success(
+      "Profile updated 🚀"
     );
 
-    alert(
-      "Password updated"
-    );
-
-    setPassword("");
+    getProfile();
   }
 
   return (
-    <div className="flex min-h-screen bg-black text-white">
-      {/* SIDEBAR */}
-
-      <div className="flex w-[270px] flex-col border-r border-white/10 bg-zinc-950 p-6">
-        <div className="mb-12">
-          <h1 className="text-4xl font-bold">
-            INVISIO
+    <MainLayout>
+      <div className="min-h-screen bg-black p-10 text-white">
+        <div className="mb-10">
+          <h1 className="text-6xl font-bold">
+            Settings
           </h1>
 
           <p className="mt-2 text-zinc-500">
-            LMS Platform
+            Manage your profile
           </p>
         </div>
 
-        <div className="space-y-4">
-          <Link
-            to="/"
-            className={`block rounded-2xl px-5 py-4 font-semibold ${
-              location.pathname ===
-              "/"
-                ? "bg-white text-black"
-                : "bg-zinc-900"
-            }`}
+        <div className="max-w-3xl rounded-3xl border border-white/10 bg-zinc-950 p-8">
+          <form
+            onSubmit={updateProfile}
+            className="space-y-6"
           >
-            Dashboard
-          </Link>
-
-          <Link
-            to="/courses"
-            className={`block rounded-2xl px-5 py-4 font-semibold ${
-              location.pathname ===
-              "/courses"
-                ? "bg-white text-black"
-                : "bg-zinc-900"
-            }`}
-          >
-            Courses
-          </Link>
-
-          <Link
-            to="/settings"
-            className={`block rounded-2xl px-5 py-4 font-semibold ${
-              location.pathname ===
-              "/settings"
-                ? "bg-white text-black"
-                : "bg-zinc-900"
-            }`}
-          >
-            Settings
-          </Link>
-        </div>
-
-        <div className="mt-auto">
-          <button
-            onClick={logout}
-            className="w-full rounded-2xl border border-red-500/20 bg-red-500/10 px-5 py-4 text-red-400"
-          >
-            Logout
-          </button>
-        </div>
-      </div>
-
-      {/* CONTENT */}
-
-      <div className="flex-1 p-10">
-        <h1 className="mb-10 text-6xl font-bold">
-          Settings
-        </h1>
-
-        <div className="max-w-2xl space-y-8">
-          {/* PROFILE */}
-
-          <div className="rounded-3xl bg-zinc-900 p-8">
-            <h2 className="mb-6 text-3xl font-bold">
-              Profile
-            </h2>
-
-            <div className="space-y-4">
-              <div>
-                <p className="text-zinc-500">
-                  Email
-                </p>
-
-                <p className="mt-2 text-xl">
-                  {email}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-zinc-500">
-                  Role
-                </p>
-
-                <p className="mt-2 text-xl">
-                  {role}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* PASSWORD */}
-
-          <div className="rounded-3xl bg-zinc-900 p-8">
-            <h2 className="mb-6 text-3xl font-bold">
-              Change Password
-            </h2>
-
-            <div className="space-y-5">
-              <input
-                type="password"
-                placeholder="New password"
-                value={password}
-                onChange={(e) =>
-                  setPassword(
-                    e.target.value
-                  )
+            <div className="flex items-center gap-5">
+              <img
+                src={
+                  avatarUrl ||
+                  "https://ui-avatars.com/api/?name=User"
                 }
-                className="w-full rounded-2xl bg-black px-5 py-4 outline-none"
+                alt="avatar"
+                className="h-24 w-24 rounded-full object-cover"
               />
 
-              <button
-                onClick={
-                  updatePassword
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) =>
+                  setAvatar(
+                    e.target
+                      .files?.[0] ||
+                      null
+                  )
                 }
-                className="rounded-2xl bg-white px-8 py-4 font-bold text-black"
-              >
-                Update Password
-              </button>
+              />
             </div>
-          </div>
+
+            <input
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={(e) =>
+                setUsername(
+                  e.target.value
+                )
+              }
+              className="w-full rounded-2xl border border-white/10 bg-black px-5 py-4 outline-none"
+            />
+
+            <textarea
+              placeholder="Bio"
+              value={bio}
+              onChange={(e) =>
+                setBio(
+                  e.target.value
+                )
+              }
+              className="h-40 w-full rounded-2xl border border-white/10 bg-black px-5 py-4 outline-none"
+            />
+
+            <button className="w-full rounded-2xl bg-white py-4 text-lg font-bold text-black">
+              {loading
+                ? "Saving..."
+                : "Save Changes"}
+            </button>
+          </form>
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 }

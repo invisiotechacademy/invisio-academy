@@ -5,15 +5,17 @@ import {
   Navigate,
 } from "react-router-dom";
 
+import DashboardPage from "./pages/dashboard";
+
 import LoginPage from "./pages/login";
+
 import RegisterPage from "./pages/register";
 
-import DashboardPage from "./pages/dashboard";
 import CoursesPage from "./pages/courses";
-import CourseDetailPage from "./pages/course-detail";
-import SettingsPage from "./pages/settings";
 
-import AuthGuard from "./components/auth/auth-guard";
+import CourseDetailPage from "./pages/course-detail";
+
+import SettingsPage from "./pages/settings";
 
 export default function App() {
   return (
@@ -28,47 +30,31 @@ export default function App() {
 
         <Route
           path="/register"
-          element={
-            <RegisterPage />
-          }
+          element={<RegisterPage />}
         />
 
-        {/* PRIVATE */}
+        {/* MAIN */}
 
         <Route
           path="/"
-          element={
-            <AuthGuard>
-              <DashboardPage />
-            </AuthGuard>
-          }
+          element={<DashboardPage />}
         />
 
         <Route
           path="/courses"
-          element={
-            <AuthGuard>
-              <CoursesPage />
-            </AuthGuard>
-          }
+          element={<CoursesPage />}
         />
 
         <Route
           path="/courses/:id"
           element={
-            <AuthGuard>
-              <CourseDetailPage />
-            </AuthGuard>
+            <CourseDetailPage />
           }
         />
 
         <Route
           path="/settings"
-          element={
-            <AuthGuard>
-              <SettingsPage />
-            </AuthGuard>
-          }
+          element={<SettingsPage />}
         />
 
         {/* FALLBACK */}

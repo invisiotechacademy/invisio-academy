@@ -4,17 +4,15 @@ import {
 } from "react";
 
 import {
+  Link,
   useParams,
 } from "react-router-dom";
 
-import { supabase } from "../lib/supabase";
+import toast from "react-hot-toast";
 
-type Course = {
-  id: number;
-  title: string;
-  description: string;
-  thumbnail_url: string;
-};
+import MainLayout from "../components/layouts/main-layout";
+
+import { supabase } from "../lib/supabase";
 
 type Lesson = {
   id: number;
@@ -27,11 +25,6 @@ export default function CourseDetailPage() {
   const { id } =
     useParams();
 
-  const [course, setCourse] =
-    useState<Course | null>(
-      null
-    );
-
   const [lessons, setLessons] =
     useState<Lesson[]>([]);
 
@@ -42,24 +35,27 @@ export default function CourseDetailPage() {
     null
   );
 
-  const [title, setTitle] =
-    useState("");
-
-  const [videoUrl,
-    setVideoUrl,
-  ] = useState("");
-
-  const [content,
-    setContent,
-  ] = useState("");
-
-  const [role, setRole] =
-    useState("");
-
   const [
     completedLessons,
     setCompletedLessons,
   ] = useState<number[]>([]);
+
+  const [title, setTitle] =
+    useState("");
+
+  const [content, setContent] =
+    useState("");
+
+  const [video, setVideo] =
+    useState<File | null>(null);
+
+  const [userId, setUserId] =
+    useState("");
+
+  useEffect(() => {
+    getUser();
+    getLessons();
+  }, []);
 
   async function getUser() {
     const {
@@ -67,30 +63,10 @@ export default function CourseDetailPage() {
     } =
       await supabase.auth.getUser();
 
-    if (!user) return;
+    if (user) {
+      setUserId(user.id);
 
-    const { data } =
-      await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-    if (data) {
-      setRole(data.role);
-    }
-  }
-
-  async function getCourse() {
-    const { data } =
-      await supabase
-        .from("courses")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-    if (data) {
-      setCourse(data);
+      getProgress(user.id);
     }
   }
 
@@ -115,25 +91,66 @@ export default function CourseDetailPage() {
     }
   }
 
-  useEffect(() => {
-    getUser();
-    getCourse();
-    getLessons();
-  }, []);
-
-  function convertYoutubeUrl(
-    url: string
+  async function getProgress(
+    userId: string
   ) {
-    if (
-      url.includes("watch?v=")
-    ) {
-      return url.replace(
-        "watch?v=",
-        "embed/"
+    const { data } =
+      await supabase
+        .from(
+          "lesson_progress"
+        )
+        .select("*")
+        .eq("user_id", userId)
+        .eq(
+          "completed",
+          true
+        );
+
+    if (data) {
+      setCompletedLessons(
+        data.map(
+          (item) =>
+            item.lesson_id
+        )
       );
     }
+  }
 
-    return url;
+  async function uploadVideo() {
+    if (!video) return "";
+
+    const fileExt =
+      video.name.split(".").pop();
+
+    const fileName =
+      `${crypto.randomUUID()}.${fileExt}`;
+
+    const { error } =
+      await supabase.storage
+        .from("lesson-videos")
+        .upload(
+          fileName,
+          video
+        );
+
+    if (error) {
+      console.log(error);
+
+      toast.error(
+        "Video upload failed ❌"
+      );
+
+      return "";
+    }
+
+    const { data } =
+      supabase.storage
+        .from("lesson-videos")
+        .getPublicUrl(
+          fileName
+        );
+
+    return data.publicUrl;
   }
 
   async function createLesson(
@@ -141,28 +158,42 @@ export default function CourseDetailPage() {
   ) {
     e.preventDefault();
 
-    await supabase
-      .from("lessons")
-      .insert([
-        {
-          course_id: id,
-          title,
-          video_url:
-            convertYoutubeUrl(
-              videoUrl
-            ),
-          content,
-        },
-      ]);
+    const videoUrl =
+      await uploadVideo();
+
+    const { error } =
+      await supabase
+        .from("lessons")
+        .insert([
+          {
+            course_id: id,
+            title,
+            video_url:
+              videoUrl,
+            content,
+          },
+        ]);
+
+    if (error) {
+      toast.error(
+        "Lesson create failed ❌"
+      );
+
+      return;
+    }
+
+    toast.success(
+      "Lesson added 🚀"
+    );
 
     setTitle("");
-    setVideoUrl("");
     setContent("");
+    setVideo(null);
 
     getLessons();
   }
 
-  function completeLesson() {
+  async function completeLesson() {
     if (!selectedLesson)
       return;
 
@@ -173,10 +204,36 @@ export default function CourseDetailPage() {
     )
       return;
 
+    const { error } =
+      await supabase
+        .from(
+          "lesson_progress"
+        )
+        .insert([
+          {
+            user_id: userId,
+            lesson_id:
+              selectedLesson.id,
+            completed: true,
+          },
+        ]);
+
+    if (error) {
+      toast.error(
+        "Progress save failed ❌"
+      );
+
+      return;
+    }
+
     setCompletedLessons([
       ...completedLessons,
       selectedLesson.id,
     ]);
+
+    toast.success(
+      "Lesson completed ✅"
+    );
   }
 
   const progress =
@@ -188,238 +245,181 @@ export default function CourseDetailPage() {
         )
       : 0;
 
-  if (!course) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-black text-white">
-        Loading...
-      </div>
-    );
-  }
-
   return (
-    <div className="flex min-h-screen bg-black text-white">
-      {/* SIDEBAR */}
+    <MainLayout>
+      <div className="min-h-screen bg-black p-10 text-white">
+        <Link
+          to="/courses"
+          className="mb-8 inline-block rounded-2xl bg-zinc-900 px-5 py-3"
+        >
+          ← Back
+        </Link>
 
-      <div className="w-[340px] border-r border-white/10 bg-zinc-950 p-6">
-        <img
-          src={
-            course.thumbnail_url
-          }
-          className="mb-6 h-52 w-full rounded-3xl object-cover"
-        />
+        <div className="mb-10">
+          <h1 className="text-5xl font-bold">
+            Course Detail
+          </h1>
 
-        <h1 className="mb-3 text-4xl font-bold">
-          {course.title}
-        </h1>
-
-        <p className="mb-6 text-zinc-400">
-          {course.description}
-        </p>
-
-        {/* PROGRESS */}
-
-        <div className="mb-8">
-          <div className="mb-2 flex justify-between text-sm">
-            <span>
-              Progress
-            </span>
-
-            <span>
-              {progress}%
-            </span>
-          </div>
-
-          <div className="h-3 rounded-full bg-zinc-800">
-            <div
-              className="h-3 rounded-full bg-white"
-              style={{
-                width:
-                  `${progress}%`,
-              }}
-            />
-          </div>
+          <p className="mt-3 text-zinc-400">
+            Progress: {progress}%
+          </p>
         </div>
 
-        {/* LESSONS */}
+        <div className="grid gap-10 xl:grid-cols-[350px_1fr]">
+          {/* LESSONS */}
 
-        <div className="space-y-3">
-          {lessons.map(
-            (lesson) => (
-              <button
-                key={lesson.id}
-                onClick={() =>
-                  setSelectedLesson(
-                    lesson
-                  )
-                }
-                className={`w-full rounded-2xl px-5 py-4 text-left transition ${
-                  selectedLesson?.id ===
-                  lesson.id
-                    ? "bg-white text-black"
-                    : "bg-zinc-900 text-white"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span>
-                    {
-                      lesson.title
-                    }
-                  </span>
-
-                  {completedLessons.includes(
-                    lesson.id
-                  ) && (
-                    <span>
-                      ✅
-                    </span>
-                  )}
-                </div>
-              </button>
-            )
-          )}
-        </div>
-
-        {/* ADMIN */}
-
-        {role === "admin" && (
-          <div className="mt-10 rounded-3xl bg-zinc-900 p-5">
-            <h2 className="mb-5 text-2xl font-bold">
-              Add Lesson
+          <div className="rounded-3xl border border-white/10 bg-zinc-950 p-6">
+            <h2 className="mb-6 text-3xl font-bold">
+              Lessons
             </h2>
 
-            <form
-              onSubmit={
-                createLesson
-              }
-              className="space-y-4"
-            >
-              <input
-                placeholder="Lesson title"
-                value={title}
-                onChange={(e) =>
-                  setTitle(
-                    e.target.value
-                  )
-                }
-                className="w-full rounded-2xl bg-black px-4 py-3 outline-none"
-              />
+            <div className="space-y-4">
+              {lessons.map(
+                (lesson) => (
+                  <button
+                    key={
+                      lesson.id
+                    }
+                    onClick={() =>
+                      setSelectedLesson(
+                        lesson
+                      )
+                    }
+                    className={`w-full rounded-2xl p-4 text-left transition ${
+                      selectedLesson?.id ===
+                      lesson.id
+                        ? "bg-white text-black"
+                        : "bg-zinc-900 text-white"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>
+                        {
+                          lesson.title
+                        }
+                      </span>
 
-              <input
-                placeholder="Youtube URL"
-                value={videoUrl}
-                onChange={(e) =>
-                  setVideoUrl(
-                    e.target.value
-                  )
-                }
-                className="w-full rounded-2xl bg-black px-4 py-3 outline-none"
-              />
-
-              <textarea
-                placeholder="Lesson content"
-                value={content}
-                onChange={(e) =>
-                  setContent(
-                    e.target.value
-                  )
-                }
-                className="h-32 w-full rounded-2xl bg-black px-4 py-3 outline-none"
-              />
-
-              <button className="w-full rounded-2xl bg-white py-4 font-bold text-black">
-                Create Lesson
-              </button>
-            </form>
-          </div>
-        )}
-      </div>
-
-      {/* VIDEO */}
-
-      <div className="flex-1 p-10">
-        {/* TOPBAR */}
-
-<div className="mb-8 flex items-center justify-between">
-  <button
-    onClick={() =>
-      window.history.back()
-    }
-    className="rounded-2xl bg-zinc-900 px-6 py-4 font-semibold transition hover:bg-zinc-800"
-  >
-    ← Back
-  </button>
-
-  <div className="flex gap-4">
-    <button
-      onClick={() =>
-        (window.location.href =
-          "/")
-      }
-      className="rounded-2xl bg-zinc-900 px-6 py-4 font-semibold transition hover:bg-zinc-800"
-    >
-      Dashboard
-    </button>
-
-    <button
-      onClick={() =>
-        (window.location.href =
-          "/courses")
-      }
-      className="rounded-2xl bg-zinc-900 px-6 py-4 font-semibold transition hover:bg-zinc-800"
-    >
-      Courses
-    </button>
-  </div>
-</div>
-        {selectedLesson ? (
-          <>
-            <div className="mb-8 overflow-hidden rounded-3xl">
-              <iframe
-                src={
-                  selectedLesson.video_url
-                }
-                className="aspect-video w-full"
-                allowFullScreen
-              />
-            </div>
-
-            <h1 className="mb-6 text-5xl font-bold">
-              {
-                selectedLesson.title
-              }
-            </h1>
-
-            <div className="rounded-3xl bg-zinc-900 p-8 text-zinc-300">
-              {
-                selectedLesson.content
-              }
-            </div>
-
-            <button
-              onClick={
-                completeLesson
-              }
-              className={`mt-8 rounded-2xl px-8 py-4 font-bold ${
-                completedLessons.includes(
-                  selectedLesson.id
+                      {completedLessons.includes(
+                        lesson.id
+                      ) && (
+                        <span>
+                          ✅
+                        </span>
+                      )}
+                    </div>
+                  </button>
                 )
-                  ? "bg-green-500 text-white"
-                  : "bg-white text-black"
-              }`}
-            >
-              {completedLessons.includes(
-                selectedLesson.id
-              )
-                ? "Completed"
-                : "Mark as Complete"}
-            </button>
-          </>
-        ) : (
-          <div className="text-zinc-400">
-            No lessons yet
+              )}
+            </div>
           </div>
-        )}
+
+          {/* CONTENT */}
+
+          <div>
+            {selectedLesson && (
+              <div className="rounded-3xl border border-white/10 bg-zinc-950 p-8">
+                <video
+                  controls
+                  className="mb-8 w-full rounded-3xl"
+                  src={
+                    selectedLesson.video_url
+                  }
+                />
+
+                <h2 className="mb-4 text-4xl font-bold">
+                  {
+                    selectedLesson.title
+                  }
+                </h2>
+
+                <p className="mb-8 text-zinc-400">
+                  {
+                    selectedLesson.content
+                  }
+                </p>
+
+                <button
+                  onClick={
+                    completeLesson
+                  }
+                  className={`rounded-2xl px-8 py-4 font-bold ${
+                    completedLessons.includes(
+                      selectedLesson.id
+                    )
+                      ? "bg-green-500 text-white"
+                      : "bg-white text-black"
+                  }`}
+                >
+                  {completedLessons.includes(
+                    selectedLesson.id
+                  )
+                    ? "Completed"
+                    : "Mark As Complete"}
+                </button>
+              </div>
+            )}
+
+            {/* ADD LESSON */}
+
+            <div className="mt-10 rounded-3xl border border-white/10 bg-zinc-950 p-8">
+              <h2 className="mb-6 text-3xl font-bold">
+                Add Lesson
+              </h2>
+
+              <form
+                onSubmit={
+                  createLesson
+                }
+                className="space-y-5"
+              >
+                <input
+                  type="text"
+                  placeholder="Lesson title"
+                  value={title}
+                  onChange={(e) =>
+                    setTitle(
+                      e.target
+                        .value
+                    )
+                  }
+                  className="w-full rounded-2xl border border-white/10 bg-black px-5 py-4 outline-none"
+                />
+
+                <textarea
+                  placeholder="Lesson content"
+                  value={
+                    content
+                  }
+                  onChange={(e) =>
+                    setContent(
+                      e.target
+                        .value
+                    )
+                  }
+                  className="h-40 w-full rounded-2xl border border-white/10 bg-black px-5 py-4 outline-none"
+                />
+
+                <input
+                  type="file"
+                  accept="video/mp4"
+                  onChange={(e) =>
+                    setVideo(
+                      e.target
+                        .files?.[0] ||
+                        null
+                    )
+                  }
+                  className="w-full rounded-2xl border border-white/10 bg-black px-5 py-4"
+                />
+
+                <button className="w-full rounded-2xl bg-white py-4 font-bold text-black">
+                  Add Lesson
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </MainLayout>
   );
 }
