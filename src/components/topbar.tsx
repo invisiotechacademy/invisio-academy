@@ -3,6 +3,8 @@ import {
   Search,
 } from "lucide-react";
 
+import ThemeToggle from "./theme-toggle";
+
 type Props = {
   title: string;
 };
@@ -41,6 +43,10 @@ export default function Topbar({
             className="bg-transparent outline-none"
           />
         </div>
+
+        {/* THEME */}
+
+        <ThemeToggle />
 
         {/* NOTIFICATION */}
 

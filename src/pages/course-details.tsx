@@ -8,574 +8,194 @@ import {
   useParams,
 } from "react-router-dom";
 
-import toast from "react-hot-toast";
-
-import {
-  Trash2,
-} from "lucide-react";
-
 import MainLayout from "../components/layouts/main-layout";
 
-import { supabase } from "../lib/supabase";
+import Loading from "../components/loading";
+
+import ReviewForm from "../components/review-form";
+
+import ReviewsList from "../components/reviews-list";
+
+import {
+  supabase,
+} from "../lib/supabase";
 
 type Lesson = {
-  id: number;
+  id: string;
+
   title: string;
+
   video_url: string;
-  content: string;
 };
 
-export default function CourseDetailPage() {
+type Course = {
+  id: string;
+
+  title: string;
+
+  description: string;
+
+  thumbnail_url: string;
+};
+
+type Review = {
+  id: string;
+
+  rating: number;
+
+  comment: string;
+};
+
+export default function CourseDetailsPage() {
   const { id } =
     useParams();
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [course, setCourse] =
+    useState<Course | null>(
+      null
+    );
 
   const [lessons, setLessons] =
     useState<Lesson[]>([]);
 
-  const [
-    selectedLesson,
-    setSelectedLesson,
-  ] = useState<Lesson | null>(
-    null
-  );
-
-  const [
-    completedLessons,
-    setCompletedLessons,
-  ] = useState<number[]>([]);
-
-  const [enrolled, setEnrolled] =
-    useState(false);
-
-  const [title, setTitle] =
-    useState("");
-
-  const [content, setContent] =
-    useState("");
-
-  const [video, setVideo] =
-    useState<File | null>(null);
-
-  const [userId, setUserId] =
-    useState("");
-
-  const [role, setRole] =
-    useState("");
+  const [reviews, setReviews] =
+    useState<Review[]>([]);
 
   useEffect(() => {
-    getUser();
-    getLessons();
+    loadData();
   }, []);
 
-  async function getUser() {
-    const {
-      data: { user },
-    } =
-      await supabase.auth.getUser();
+  async function loadData() {
+    if (!id) return;
 
-    if (!user) return;
-
-    setUserId(user.id);
-
-    getProgress(user.id);
-
-    checkEnrollment(user.id);
-
-    const { data } =
+    const courseData =
       await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
+        .from("courses")
+        .select("*")
+        .eq("id", id)
         .single();
 
-    if (data) {
-      setRole(data.role);
-    }
-  }
-
-  async function checkEnrollment(
-    userId: string
-  ) {
-    const { data } =
-      await supabase
-        .from("enrollments")
-        .select("*")
-        .eq("user_id", userId)
-        .eq("course_id", id)
-        .single();
-
-    if (data) {
-      setEnrolled(true);
-    }
-  }
-
-  async function enrollCourse() {
-    const { error } =
-      await supabase
-        .from("enrollments")
-        .insert([
-          {
-            user_id: userId,
-            course_id: id,
-          },
-        ]);
-
-    if (error) {
-      toast.error(
-        "Enrollment failed ❌"
+    if (courseData.data) {
+      setCourse(
+        courseData.data
       );
-
-      return;
     }
 
-    setEnrolled(true);
-
-    toast.success(
-      "Enrolled successfully 🚀"
-    );
-  }
-
-  async function getLessons() {
-    const { data } =
+    const lessonsData =
       await supabase
         .from("lessons")
         .select("*")
-        .eq("course_id", id)
-        .order("created_at", {
-          ascending: true,
-        });
+        .eq("course_id", id);
 
-    if (data) {
-      setLessons(data);
-
-      if (data.length > 0) {
-        setSelectedLesson(
-          data[0]
-        );
-      }
+    if (lessonsData.data) {
+      setLessons(
+        lessonsData.data
+      );
     }
-  }
 
-  async function getProgress(
-    userId: string
-  ) {
-    const { data } =
+    const reviewsData =
       await supabase
-        .from(
-          "lesson_progress"
-        )
+        .from("reviews")
         .select("*")
-        .eq("user_id", userId)
-        .eq(
-          "completed",
-          true
-        );
+        .eq("course_id", id);
 
-    if (data) {
-      setCompletedLessons(
-        data.map(
-          (item) =>
-            item.lesson_id
-        )
+    if (reviewsData.data) {
+      setReviews(
+        reviewsData.data
       );
     }
+
+    setLoading(false);
   }
 
-  async function uploadVideo() {
-    if (!video) return "";
-
-    const fileExt =
-      video.name.split(".").pop();
-
-    const fileName =
-      `${crypto.randomUUID()}.${fileExt}`;
-
-    const { error } =
-      await supabase.storage
-        .from("lesson-videos")
-        .upload(
-          fileName,
-          video
-        );
-
-    if (error) {
-      toast.error(
-        "Video upload failed ❌"
-      );
-
-      return "";
-    }
-
-    const { data } =
-      supabase.storage
-        .from("lesson-videos")
-        .getPublicUrl(
-          fileName
-        );
-
-    return data.publicUrl;
+  if (loading) {
+    return <Loading />;
   }
-
-  async function createLesson(
-    e: React.FormEvent
-  ) {
-    e.preventDefault();
-
-    const videoUrl =
-      await uploadVideo();
-
-    const { error } =
-      await supabase
-        .from("lessons")
-        .insert([
-          {
-            course_id: id,
-            title,
-            video_url:
-              videoUrl,
-            content,
-          },
-        ]);
-
-    if (error) {
-      toast.error(
-        "Lesson create failed ❌"
-      );
-
-      return;
-    }
-
-    toast.success(
-      "Lesson added 🚀"
-    );
-
-    setTitle("");
-    setContent("");
-    setVideo(null);
-
-    getLessons();
-  }
-
-  async function deleteLesson(
-    lessonId: number
-  ) {
-    const confirmDelete =
-      window.confirm(
-        "Delete this lesson?"
-      );
-
-    if (!confirmDelete)
-      return;
-
-    const { error } =
-      await supabase
-        .from("lessons")
-        .delete()
-        .eq("id", lessonId);
-
-    if (error) {
-      toast.error(
-        "Delete failed ❌"
-      );
-
-      return;
-    }
-
-    toast.success(
-      "Lesson deleted 🗑️"
-    );
-
-    getLessons();
-  }
-
-  async function completeLesson() {
-    if (!selectedLesson)
-      return;
-
-    if (
-      completedLessons.includes(
-        selectedLesson.id
-      )
-    )
-      return;
-
-    const { error } =
-      await supabase
-        .from(
-          "lesson_progress"
-        )
-        .insert([
-          {
-            user_id: userId,
-            lesson_id:
-              selectedLesson.id,
-            completed: true,
-          },
-        ]);
-
-    if (error) {
-      toast.error(
-        "Progress failed ❌"
-      );
-
-      return;
-    }
-
-    setCompletedLessons([
-      ...completedLessons,
-      selectedLesson.id,
-    ]);
-
-    toast.success(
-      "Lesson completed ✅"
-    );
-  }
-
-  const progress =
-    lessons.length > 0
-      ? Math.round(
-          (completedLessons.length /
-            lessons.length) *
-            100
-        )
-      : 0;
 
   return (
     <MainLayout>
       <div className="min-h-screen bg-black p-10 text-white">
-        <Link
-          to="/courses"
-          className="mb-8 inline-block rounded-2xl bg-zinc-900 px-5 py-3"
-        >
-          ← Back
-        </Link>
+        <img
+          src={
+            course?.thumbnail_url
+          }
+          alt={course?.title}
+          className="h-[400px] w-full rounded-3xl object-cover"
+        />
 
-        <div className="mb-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <h1 className="text-5xl font-bold">
-              Course Detail
-            </h1>
+        <h1 className="mt-10 text-6xl font-bold">
+          {course?.title}
+        </h1>
 
-            <p className="mt-3 text-zinc-400">
-              Progress: {progress}%
-            </p>
-          </div>
+        <p className="mt-6 max-w-4xl text-2xl text-zinc-400">
+          {
+            course?.description
+          }
+        </p>
 
-          {!enrolled &&
-            role !== "admin" && (
-              <button
-                onClick={
-                  enrollCourse
-                }
-                className="rounded-2xl bg-white px-8 py-4 font-bold text-black"
-              >
-                Enroll Course
-              </button>
-            )}
+        <div className="mt-14 flex flex-wrap gap-5">
+          <Link
+            to={`/certificate/${id}`}
+            className="rounded-2xl bg-white px-8 py-4 text-xl font-bold text-black"
+          >
+            Get Certificate
+          </Link>
+
+          <Link
+            to="/courses"
+            className="rounded-2xl border border-white/10 px-8 py-4 text-xl font-bold"
+          >
+            Back
+          </Link>
         </div>
 
-        {!enrolled &&
-        role !== "admin" ? (
-          <div className="rounded-3xl border border-white/10 bg-zinc-950 p-10 text-center">
-            <h2 className="text-4xl font-bold">
-              Enroll Required 🚀
-            </h2>
+        <div className="mt-16 space-y-8">
+          {lessons.map(
+            (lesson) => (
+              <div
+                key={lesson.id}
+                className="rounded-3xl border border-white/10 bg-zinc-950 p-8"
+              >
+                <h2 className="mb-6 text-3xl font-bold">
+                  {
+                    lesson.title
+                  }
+                </h2>
 
-            <p className="mt-4 text-zinc-400">
-              You need to enroll to
-              access lessons.
-            </p>
-          </div>
-        ) : (
-          <div className="grid gap-10 xl:grid-cols-[350px_1fr]">
-            {/* LESSONS */}
-
-            <div className="rounded-3xl border border-white/10 bg-zinc-950 p-6">
-              <h2 className="mb-6 text-3xl font-bold">
-                Lessons
-              </h2>
-
-              <div className="space-y-4">
-                {lessons.map(
-                  (lesson) => (
-                    <div
-                      key={
-                        lesson.id
-                      }
-                      className={`rounded-2xl p-4 transition ${
-                        selectedLesson?.id ===
-                        lesson.id
-                          ? "bg-white text-black"
-                          : "bg-zinc-900 text-white"
-                      }`}
-                    >
-                      <button
-                        onClick={() =>
-                          setSelectedLesson(
-                            lesson
-                          )
-                        }
-                        className="w-full text-left"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span>
-                            {
-                              lesson.title
-                            }
-                          </span>
-
-                          {completedLessons.includes(
-                            lesson.id
-                          ) && (
-                            <span>
-                              ✅
-                            </span>
-                          )}
-                        </div>
-                      </button>
-
-                      {role ===
-                        "admin" && (
-                        <button
-                          onClick={() =>
-                            deleteLesson(
-                              lesson.id
-                            )
-                          }
-                          className="mt-4 flex items-center gap-2 text-red-400"
-                        >
-                          <Trash2
-                            size={
-                              16
-                            }
-                          />
-                          Delete
-                        </button>
-                      )}
-                    </div>
-                  )
-                )}
-              </div>
-            </div>
-
-            {/* CONTENT */}
-
-            <div>
-              {selectedLesson && (
-                <div className="rounded-3xl border border-white/10 bg-zinc-950 p-8">
-                  <video
-                    controls
-                    className="mb-8 w-full rounded-3xl"
+                <video
+                  controls
+                  className="w-full rounded-2xl"
+                >
+                  <source
                     src={
-                      selectedLesson.video_url
+                      lesson.video_url
                     }
                   />
+                </video>
+              </div>
+            )
+          )}
+        </div>
 
-                  <h2 className="mb-4 text-4xl font-bold">
-                    {
-                      selectedLesson.title
-                    }
-                  </h2>
+        <div className="mt-20 grid gap-10 lg:grid-cols-2">
+          <ReviewForm
+            courseId={
+              id || ""
+            }
+            onSuccess={
+              loadData
+            }
+          />
 
-                  <p className="mb-8 text-zinc-400">
-                    {
-                      selectedLesson.content
-                    }
-                  </p>
-
-                  <button
-                    onClick={
-                      completeLesson
-                    }
-                    className={`rounded-2xl px-8 py-4 font-bold ${
-                      completedLessons.includes(
-                        selectedLesson.id
-                      )
-                        ? "bg-green-500 text-white"
-                        : "bg-white text-black"
-                    }`}
-                  >
-                    {completedLessons.includes(
-                      selectedLesson.id
-                    )
-                      ? "Completed"
-                      : "Mark As Complete"}
-                  </button>
-                </div>
-              )}
-
-              {/* ADMIN */}
-
-              {role === "admin" && (
-                <div className="mt-10 rounded-3xl border border-white/10 bg-zinc-950 p-8">
-                  <h2 className="mb-6 text-3xl font-bold">
-                    Add Lesson
-                  </h2>
-
-                  <form
-                    onSubmit={
-                      createLesson
-                    }
-                    className="space-y-5"
-                  >
-                    <input
-                      type="text"
-                      placeholder="Lesson title"
-                      value={title}
-                      onChange={(
-                        e
-                      ) =>
-                        setTitle(
-                          e
-                            .target
-                            .value
-                        )
-                      }
-                      className="w-full rounded-2xl border border-white/10 bg-black px-5 py-4 outline-none"
-                    />
-
-                    <textarea
-                      placeholder="Lesson content"
-                      value={
-                        content
-                      }
-                      onChange={(
-                        e
-                      ) =>
-                        setContent(
-                          e
-                            .target
-                            .value
-                        )
-                      }
-                      className="h-40 w-full rounded-2xl border border-white/10 bg-black px-5 py-4 outline-none"
-                    />
-
-                    <input
-                      type="file"
-                      accept="video/mp4"
-                      onChange={(
-                        e
-                      ) =>
-                        setVideo(
-                          e
-                            .target
-                            .files?.[0] ||
-                            null
-                        )
-                      }
-                      className="w-full rounded-2xl border border-white/10 bg-black px-5 py-4"
-                    />
-
-                    <button className="w-full rounded-2xl bg-white py-4 font-bold text-black">
-                      Add Lesson
-                    </button>
-                  </form>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+          <ReviewsList
+            reviews={
+              reviews
+            }
+          />
+        </div>
       </div>
     </MainLayout>
   );

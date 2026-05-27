@@ -17,6 +17,8 @@ import CourseDetailPage from "./pages/course-detail";
 
 import SettingsPage from "./pages/settings";
 
+import CertificatePage from "./pages/certificate";
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -66,6 +68,10 @@ export default function App() {
           }
         />
       </Routes>
+          <Route
+          path="/certificate/:id"
+          element={<CertificatePage />}
+        />  
     </BrowserRouter>
   );
 }
