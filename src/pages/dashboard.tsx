@@ -3,275 +3,239 @@ import {
   useState,
 } from "react";
 
-import { Link } from "react-router-dom";
+import {
+  Link,
+} from "react-router-dom";
 
 import MainLayout from "../components/layouts/main-layout";
 
-import Topbar from "../components/topbar";
-
 import Loading from "../components/loading";
 
-import EmptyState from "../components/empty-state";
+import {
+  supabase,
+} from "../lib/supabase";
 
-import { supabase } from "../lib/supabase";
+type Course = {
+  id: number;
 
-type Stats = {
-  users: number;
-  courses: number;
-  lessons: number;
-  progress: number;
+  title: string;
+
+  description: string;
+
+  thumbnail_url: string;
 };
 
-type Enrollment = {
-  id: number;
-  course_id: string;
-  courses: {
-    id: string;
-    title: string;
-    thumbnail_url: string;
-    description: string;
-  };
+type Progress = {
+  course_id: number;
+
+  progress: number;
 };
 
 export default function DashboardPage() {
   const [loading, setLoading] =
     useState(true);
 
-  const [stats, setStats] =
-    useState<Stats>({
-      users: 0,
-      courses: 0,
-      lessons: 0,
-      progress: 0,
-    });
+  const [courses, setCourses] =
+    useState<Course[]>([]);
 
-  const [
-    enrollments,
-    setEnrollments,
-  ] = useState<
-    Enrollment[]
-  >([]);
+  const [progressData, setProgressData] =
+    useState<Progress[]>([]);
+
+  const [userName, setUserName] =
+    useState("");
 
   useEffect(() => {
-    loadData();
+    loadDashboard();
   }, []);
 
-  async function loadData() {
-    await Promise.all([
-      getStats(),
-      getEnrollments(),
-    ]);
+  async function loadDashboard() {
+    try {
+      setLoading(true);
 
-    setLoading(false);
-  }
+      const {
+        data: { user },
+      } =
+        await supabase.auth.getUser();
 
-  async function getStats() {
-    const users =
-      await supabase
-        .from("profiles")
-        .select("*", {
-          count: "exact",
-          head: true,
-        });
+      if (user) {
+        setUserName(
+          user.email || "Student"
+        );
 
-    const courses =
-      await supabase
-        .from("courses")
-        .select("*", {
-          count: "exact",
-          head: true,
-        });
+        const {
+          data: progress,
+        } =
+          await supabase
+            .from(
+              "course_progress"
+            )
+            .select("*")
+            .eq(
+              "user_id",
+              user.id
+            );
 
-    const lessons =
-      await supabase
-        .from("lessons")
-        .select("*", {
-          count: "exact",
-          head: true,
-        });
+        setProgressData(
+          progress || []
+        );
+      }
 
-    const progress =
-      await supabase
-        .from(
-          "lesson_progress"
-        )
-        .select("*", {
-          count: "exact",
-          head: true,
-        });
+      const { data: courses } =
+        await supabase
+          .from("courses")
+          .select("*")
+          .order(
+            "created_at",
+            {
+              ascending: false,
+            }
+          );
 
-    setStats({
-      users:
-        users.count || 0,
-
-      courses:
-        courses.count || 0,
-
-      lessons:
-        lessons.count || 0,
-
-      progress:
-        progress.count || 0,
-    });
-  }
-
-  async function getEnrollments() {
-    const {
-      data: { user },
-    } =
-      await supabase.auth.getUser();
-
-    if (!user) return;
-
-    const { data } =
-      await supabase
-        .from("enrollments")
-        .select(
-          `
-          *,
-          courses (
-            id,
-            title,
-            thumbnail_url,
-            description
-          )
-        `
-        )
-        .eq("user_id", user.id);
-
-    if (data) {
-      setEnrollments(data);
+      setCourses(courses || []);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
   }
 
+  function getProgress(
+    courseId: number
+  ) {
+    const found =
+      progressData.find(
+        (p) =>
+          p.course_id ===
+          courseId
+      );
+
+    return found?.progress || 0;
+  }
+
   if (loading) {
-    return <Loading />;
+    return (
+      <MainLayout>
+        <Loading />
+      </MainLayout>
+    );
   }
 
   return (
     <MainLayout>
       <div className="min-h-screen bg-black p-10 text-white">
-        <Topbar title="Dashboard" />
-
-        {/* STATS */}
-
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-3xl border border-white/10 bg-zinc-950 p-8">
-            <p className="text-zinc-500">
-              Total Users
+        <div className="mb-14 flex flex-col gap-8 xl:flex-row xl:items-center xl:justify-between">
+          <div>
+            <p className="mb-3 text-zinc-500">
+              Welcome back 👋
             </p>
 
-            <h2 className="mt-4 text-5xl font-bold">
-              {stats.users}
-            </h2>
+            <h1 className="text-7xl font-bold">
+              {userName
+                .split("@")[0]
+                .toUpperCase()}
+            </h1>
+
+            <p className="mt-5 max-w-2xl text-2xl text-zinc-400">
+              Continue learning
+              and level up your
+              skills 🚀
+            </p>
           </div>
 
-          <div className="rounded-3xl border border-white/10 bg-zinc-950 p-8">
-            <p className="text-zinc-500">
-              Total Courses
-            </p>
+          <div className="grid grid-cols-2 gap-5">
+            <div className="rounded-3xl border border-white/10 bg-zinc-950 p-8">
+              <p className="text-zinc-500">
+                Courses
+              </p>
 
-            <h2 className="mt-4 text-5xl font-bold">
-              {stats.courses}
-            </h2>
-          </div>
+              <h2 className="mt-3 text-5xl font-bold">
+                {courses.length}
+              </h2>
+            </div>
 
-          <div className="rounded-3xl border border-white/10 bg-zinc-950 p-8">
-            <p className="text-zinc-500">
-              Total Lessons
-            </p>
+            <div className="rounded-3xl border border-white/10 bg-zinc-950 p-8">
+              <p className="text-zinc-500">
+                Progress
+              </p>
 
-            <h2 className="mt-4 text-5xl font-bold">
-              {stats.lessons}
-            </h2>
-          </div>
-
-          <div className="rounded-3xl border border-white/10 bg-zinc-950 p-8">
-            <p className="text-zinc-500">
-              Completed Lessons
-            </p>
-
-            <h2 className="mt-4 text-5xl font-bold">
-              {stats.progress}
-            </h2>
+              <h2 className="mt-3 text-5xl font-bold">
+                {
+                  progressData.length
+                }
+              </h2>
+            </div>
           </div>
         </div>
 
-        {/* CONTINUE */}
-
-        <div className="mt-14">
+        <div className="mb-16">
           <div className="mb-8 flex items-center justify-between">
-            <h2 className="text-4xl font-bold">
+            <h2 className="text-5xl font-bold">
               Continue Learning
             </h2>
 
             <Link
               to="/courses"
-              className="rounded-2xl bg-white px-5 py-3 font-bold text-black"
+              className="rounded-2xl border border-white/10 px-6 py-4 text-lg font-semibold transition hover:bg-white hover:text-black"
             >
               Browse Courses
             </Link>
           </div>
 
-          {enrollments.length ===
-          0 ? (
-            <EmptyState
-              title="No enrolled courses"
-              description="Enroll into a course to continue learning 🚀"
-            />
-          ) : (
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
-              {enrollments.map(
-                (
-                  enrollment
-                ) => (
-                  <Link
-                    key={
-                      enrollment.id
+          <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
+            {courses.map((course) => (
+              <Link
+                key={course.id}
+                to={`/courses/${course.id}`}
+                className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-950 transition hover:-translate-y-1"
+              >
+                <img
+                  src={
+                    course.thumbnail_url
+                  }
+                  alt={course.title}
+                  className="h-64 w-full object-cover"
+                />
+
+                <div className="p-8">
+                  <h3 className="text-3xl font-bold">
+                    {course.title}
+                  </h3>
+
+                  <p className="mt-4 line-clamp-2 text-zinc-400">
+                    {
+                      course.description
                     }
-                    to={`/courses/${enrollment.courses.id}`}
-                    className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-950 transition hover:scale-[1.02]"
-                  >
-                    <img
-                      src={
-                        enrollment
-                          .courses
-                          .thumbnail_url
-                      }
-                      alt={
-                        enrollment
-                          .courses
-                          .title
-                      }
-                      className="h-56 w-full object-cover"
-                    />
+                  </p>
 
-                    <div className="p-6">
-                      <h2 className="mb-3 text-3xl font-bold">
-                        {
-                          enrollment
-                            .courses
-                            .title
-                        }
-                      </h2>
-
-                      <p className="line-clamp-3 text-zinc-400">
-                        {
-                          enrollment
-                            .courses
-                            .description
-                        }
+                  <div className="mt-8">
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-zinc-500">
+                        Progress
                       </p>
 
-                      <button className="mt-6 w-full rounded-2xl bg-white py-3 font-semibold text-black">
-                        Continue
-                      </button>
+                      <p className="font-bold">
+                        {getProgress(
+                          course.id
+                        )}
+                        %
+                      </p>
                     </div>
-                  </Link>
-                )
-              )}
-            </div>
-          )}
+
+                    <div className="h-4 overflow-hidden rounded-full bg-zinc-800">
+                      <div
+                        style={{
+                          width: `${getProgress(
+                            course.id
+                          )}%`,
+                        }}
+                        className="h-full rounded-full bg-white transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </MainLayout>
