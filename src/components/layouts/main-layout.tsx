@@ -6,7 +6,7 @@ import {
   Link,
 } from "react-router-dom";
 
-import MobileNav from "../mobile-nav";
+
 
 import { supabase } from "../../lib/supabase";
 
@@ -94,7 +94,8 @@ export default function MainLayout({
 
       <main>{children}</main>
 
-      <MobileNav />
+     
+     
     </div>
   );
 }

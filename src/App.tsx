@@ -5,27 +5,32 @@ import {
 } from "react-router-dom";
 
 import HomePage from "./pages/home";
+import LoginPage from "./pages/login";
 
 import CoursesPage from "./pages/courses";
-
 import CourseDetailsPage from "./pages/course-detail";
 
 import AdminPage from "./pages/admin";
-
 import SettingsPage from "./pages/settings";
 
 import LandingPage from "./pages/landing";
-
 import UpgradePage from "./pages/upgrade";
 
 import LessonPlayerPage from "./pages/lesson-player";
-
 import CertificatePage from "./pages/certificate";
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+
+        {/* LOGIN */}
+        <Route
+          path="/login"
+          element={<LoginPage />}
+        />
+
+        {/* DASHBOARD */}
         <Route
           path="/"
           element={<HomePage />}
@@ -43,9 +48,7 @@ export default function App() {
 
         <Route
           path="/courses/:id"
-          element={
-            <CourseDetailsPage />
-          }
+          element={<CourseDetailsPage />}
         />
 
         <Route
@@ -72,6 +75,7 @@ export default function App() {
           path="/certificate"
           element={<CertificatePage />}
         />
+
       </Routes>
     </BrowserRouter>
   );
